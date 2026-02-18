@@ -102,4 +102,32 @@ checks:
     on_fail: warn
     skip_if:
       path_not_exists: docs`,
+
+  // C-SEC01: .env files must not be committed (must be in .gitignore)
+  `id: C-SEC01
+description: .env files must be gitignored
+type: atomic
+trigger: commit
+scope:
+  paths: [".gitignore"]
+checks:
+  - name: .env in .gitignore
+    regex_in_file:
+      pattern: '^\\.env'
+    on_fail: fail`,
+
+  // C-SEC03: vault password files must be gitignored
+  `id: C-SEC03
+description: .vault_password files must be gitignored
+type: atomic
+trigger: commit
+scope:
+  paths: [".gitignore"]
+checks:
+  - name: .vault_password in .gitignore
+    regex_in_file:
+      pattern: '^\\.vault_password'
+    on_fail: fail
+    skip_if:
+      path_not_exists: .agent/vault`,
 ];
