@@ -1,0 +1,27 @@
+{
+  "name": "agent-config",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "test": "bun test",
+    "build": "bun build src/index.ts --compile --outfile dist/agent-config"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/js-yaml": "^4.0.9",
+    "@types/micromatch": "^4.0.10",
+    "@types/node": "^25.2.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.2.1",
+    "commander": "^14.0.3",
+    "js-yaml": "^4.1.1",
+    "micromatch": "^4.0.8",
+    "zod": "^4.3.6"
+  }
+}
