@@ -3,6 +3,7 @@ import { Glob } from "bun";
 import yaml from "js-yaml";
 import { parseContractFile } from "../engine/parser";
 import { runAudit } from "../engine/audit";
+import type { CoverageOptions } from "../engine/audit";
 import { printAuditResult } from "../engine/reporter";
 import { loadBuiltinContracts } from "../builtins/index";
 import type { Contract, ContractTrigger } from "../engine/types";
@@ -45,10 +46,17 @@ export async function auditCommand(options: { trigger?: string; noBuiltins?: boo
   const projectContracts = await loadProjectContracts(projectRoot);
 
   let stacks: Stack[] = [];
+  let coverage: CoverageOptions | undefined;
   const configPath = `${projectRoot}/.agent/config.yaml`;
   if (existsSync(configPath)) {
     const cfg = yaml.load(readFileSync(configPath, "utf8")) as ProjectConfig;
     stacks = cfg.stack ?? [];
+    if (cfg.contracts?.require_coverage !== false) {
+      coverage = {
+        enabled: true,
+        paths: cfg.contracts?.coverage_paths ?? ["src/**/*", "lib/**/*", "app/**/*"],
+      };
+    }
   }
 
   const builtins = options.noBuiltins ? [] : loadBuiltinContracts(stacks);
@@ -59,7 +67,7 @@ export async function auditCommand(options: { trigger?: string; noBuiltins?: boo
     process.exit(0);
   }
 
-  const result = await runAudit(contracts, trigger, projectRoot);
+  const result = await runAudit(contracts, trigger, projectRoot, coverage);
   printAuditResult(result);
 
   if (result.failed > 0) process.exit(1);

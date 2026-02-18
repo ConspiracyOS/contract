@@ -11,6 +11,7 @@ export interface ProjectConfig {
     audit_on: string[];
     behavioral_on: string[];
     require_coverage: boolean;
+    coverage_paths?: string[];
   };
 }
 

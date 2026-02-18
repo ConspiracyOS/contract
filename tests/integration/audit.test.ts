@@ -184,3 +184,51 @@ checks:
     expect(result.failed).toBe(1);
   });
 });
+
+describe("C-PROC04 coverage check", () => {
+  it("warns on source files not covered by any contract", async () => {
+    // TMP already has src/main.ts; no contract covers src/**/*.ts
+    const result = await runAudit(
+      [],  // no contracts
+      "commit",
+      TMP,
+      { enabled: true, paths: ["src/**/*"] }
+    );
+    expect(result.warned).toBeGreaterThan(0);
+    expect(result.results.some(r => r.contractId === "C-PROC04")).toBe(true);
+  });
+
+  it("does not warn when files are covered by a contract", async () => {
+    const contract = parseContract(`
+id: INT-COVER
+description: cover src files
+type: atomic
+trigger: commit
+scope:
+  paths:
+    - src/**/*
+checks:
+  - name: any file
+    path_exists:
+      path: src
+    on_fail: warn
+`);
+    const result = await runAudit(
+      [contract],
+      "commit",
+      TMP,
+      { enabled: true, paths: ["src/**/*"] }
+    );
+    expect(result.results.some(r => r.contractId === "C-PROC04")).toBe(false);
+  });
+
+  it("does not fire when enabled is false", async () => {
+    const result = await runAudit([], "commit", TMP, { enabled: false, paths: ["src/**/*"] });
+    expect(result.results.some(r => r.contractId === "C-PROC04")).toBe(false);
+  });
+
+  it("does not fire on non-commit triggers", async () => {
+    const result = await runAudit([], "pr", TMP, { enabled: true, paths: ["src/**/*"] });
+    expect(result.results.some(r => r.contractId === "C-PROC04")).toBe(false);
+  });
+});

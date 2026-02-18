@@ -1,7 +1,13 @@
 // src/engine/audit.ts
+import { Glob } from "bun";
 import type { AuditResult, Contract, ContractTrigger } from "./types";
 import { resolveScope } from "./scope";
 import { runCheck } from "./runner";
+
+export interface CoverageOptions {
+  enabled: boolean;
+  paths: string[];
+}
 
 export async function auditContract(
   contract: Contract,
@@ -30,14 +36,55 @@ export async function auditContract(
   return results;
 }
 
+async function checkCoverage(
+  patterns: string[],
+  evaluatedFiles: Set<string>,
+  projectRoot: string
+): Promise<AuditResult["results"]> {
+  const results: AuditResult["results"] = [];
+  for (const pattern of patterns) {
+    const glob = new Glob(pattern);
+    for await (const file of glob.scan({ cwd: projectRoot, absolute: true })) {
+      if (!evaluatedFiles.has(file)) {
+        results.push({
+          contractId: "C-PROC04",
+          contractDescription: "All source files must be in at least one contract scope",
+          checkName: "file has contract coverage",
+          status: "warn",
+          message: "no contract evaluates this file",
+          file,
+        });
+      }
+    }
+  }
+  return results;
+}
+
 export async function runAudit(
   contracts: Contract[],
   trigger: ContractTrigger,
-  projectRoot: string
+  projectRoot: string,
+  coverage?: CoverageOptions
 ): Promise<AuditResult> {
-  const allResults = [];
+  const allResults: AuditResult["results"] = [];
+  const evaluatedFiles = new Set<string>();
+
   for (const contract of contracts) {
-    allResults.push(...(await auditContract(contract, trigger, projectRoot)));
+    const contractResults = await auditContract(contract, trigger, projectRoot);
+    allResults.push(...contractResults);
+
+    // Track files evaluated by contracts that matched the trigger
+    if (contract.trigger === trigger) {
+      const files = await resolveScope(contract.scope, projectRoot);
+      for (const file of files) {
+        evaluatedFiles.add(file);
+      }
+    }
+  }
+
+  if (coverage?.enabled && trigger === "commit") {
+    const coverageResults = await checkCoverage(coverage.paths, evaluatedFiles, projectRoot);
+    allResults.push(...coverageResults);
   }
 
   return {
