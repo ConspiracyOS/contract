@@ -36,7 +36,7 @@ agent-config audit --trigger merge  # trigger: merge
 agent-config audit --no-builtins    # skip built-in process contracts
 ```
 
-Loads built-in contracts plus any `.agent/contracts/*.yaml` files. Exits 1 if any contract fails.
+Loads built-in contracts plus any `.agent/contracts/**/*.yaml` files (subdirectories supported). Exits 1 if any contract fails.
 
 ### `init` — onboard a project
 
@@ -91,6 +91,7 @@ checks:
 | `no_regex_in_file` | File must not match regex pattern |
 | `yaml_key` | YAML file key must equal/match/exist |
 | `json_key` | JSON file key must equal/match/exist |
+| `toml_key` | TOML file key must equal/match/exist |
 | `env_var` | Environment variable must be set (optionally matching value) |
 | `no_env_var` | Environment variable must not be set |
 | `command_available` | Command must be on PATH |
@@ -129,6 +130,8 @@ skip_if:
 | C-PROC03 | commit | No bare TODO comments without issue ref |
 | C-PROC05 | commit | `worktrees/` is gitignored |
 | C-PROC06 | pr | No stale files in `tmp/` |
+
+Stack contracts are enabled based on the `stack` field in `.agent/config.yaml` (set during `agent-config init`, which auto-detects stacks from signal files: `tsconfig.json`/`package.json` → `typescript`, `mix.exs` → `elixir`, `pyproject.toml`/`requirements.txt` → `python`, `Cargo.toml` → `rust`).
 
 Stack contracts (enabled by detected stack):
 
