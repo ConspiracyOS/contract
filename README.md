@@ -64,6 +64,32 @@ agent-config install
 
 Re-installs git hooks and GitHub workflow files from the existing `.agent/config.yaml`. Safe to run repeatedly.
 
+### `contract` — manage contracts
+
+```bash
+agent-config contract list                  # list all contracts (builtins + project)
+agent-config contract check C-PROC05       # run a single contract by ID
+agent-config contract new                  # scaffold a new contract interactively
+```
+
+### `spec` — manage RFCs
+
+```bash
+agent-config spec new                      # scaffold a new RFC
+agent-config spec list                     # list all RFCs with status
+agent-config spec status RFC-001           # show RFC lifecycle detail
+```
+
+### `vault` — manage encrypted secrets
+
+```bash
+agent-config vault init                    # initialise empty vault (requires .vault_password)
+agent-config vault set API_KEY my-secret   # store a secret
+agent-config vault get API_KEY             # retrieve a secret
+agent-config vault list                    # list keys (no values)
+agent-config vault export                  # print export statements for shell sourcing
+```
+
 ## Contracts
 
 Contracts are YAML files in `.agent/contracts/`. Example:
