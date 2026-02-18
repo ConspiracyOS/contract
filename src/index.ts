@@ -5,6 +5,7 @@ import { initCommand } from "./commands/init";
 import { installCommand } from "./commands/install";
 import { vaultGet, vaultSet, vaultList, vaultExport, vaultInit } from "./commands/vault";
 import { contractList, contractCheck, contractNew } from "./commands/contract";
+import { specNew, specList, specStatus } from "./commands/spec";
 
 const program = new Command();
 
@@ -52,5 +53,10 @@ contractCmd
   .option("--trigger <trigger>", "Override trigger context")
   .action(contractCheck);
 contractCmd.command("new").description("Scaffold a new contract interactively").action(contractNew);
+
+const specCmd = program.command("spec").description("Manage RFCs");
+specCmd.command("new").description("Scaffold a new RFC").action(specNew);
+specCmd.command("list").description("List all RFCs with status").action(specList);
+specCmd.command("status <id>").description("Show RFC lifecycle status").action(specStatus);
 
 program.parse();
