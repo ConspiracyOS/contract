@@ -4,6 +4,7 @@ import { auditCommand } from "./commands/audit";
 import { initCommand } from "./commands/init";
 import { installCommand } from "./commands/install";
 import { vaultGet, vaultSet, vaultList, vaultExport, vaultInit } from "./commands/vault";
+import { contractList, contractCheck } from "./commands/contract";
 
 const program = new Command();
 
@@ -42,5 +43,13 @@ vault.command("set <key> <value>").description("Store a secret value").action(va
 vault.command("list").description("List all secret keys (no values)").action(vaultList);
 vault.command("export").description("Print export statements for shell sourcing").action(vaultExport);
 vault.command("init").description("Initialise empty vault (requires .vault_password)").action(vaultInit);
+
+const contractCmd = program.command("contract").description("Manage contracts");
+contractCmd.command("list").description("List all contracts (builtins + project)").action(contractList);
+contractCmd
+  .command("check <id>")
+  .description("Run a single contract by ID")
+  .option("--trigger <trigger>", "Override trigger context")
+  .action(contractCheck);
 
 program.parse();
