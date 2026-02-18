@@ -145,6 +145,17 @@ Stack contracts (enabled by detected stack):
 | C-EX01 | Elixir | commit | `mix format` clean |
 | C-EX02 | Elixir | pr | `mix credo --strict` passes |
 | C-EX04 | Elixir | pr | All umbrella apps pass `mix test` |
+| C-RB01 | Rails | pr | `bundle exec rubocop` passes |
+| C-RB02 | Rails | pr | `bundle exec rails test` passes |
+| C-RB03 | Rails | commit | No bare `find_by` without nil guard |
+| C-RS01 | Rust | commit | `cargo clippy -- -D warnings` passes |
+| C-RS02 | Rust | commit | `cargo fmt --check` passes |
+| C-RS03 | Rust | pr | All modules include `proptest::` |
+| C-MO01 | Mobile | pr | `expo-doctor` passes |
+| C-MO02 | Mobile | commit | No hardcoded `localhost` in source |
+| C-CT01 | Containers | commit | No host port binding in compose files |
+| C-CT03 | Containers | commit | No `latest` image tags |
+| C-CT04 | Containers | commit | No `localhost` in service configs |
 
 ## Development
 
