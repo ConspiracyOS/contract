@@ -37,6 +37,10 @@ describe("checkJsonKey", () => {
     writeFileSync(`${TMP}/broken.json`, "{ not valid json ]]]");
     expect(await checkJsonKey(`${TMP}/broken.json`, "version", { equals: "1.0.0" })).toBe(false);
   });
+
+  it("returns false (not a crash) when matches contains invalid regex", async () => {
+    expect(await checkJsonKey(`${TMP}/pkg.json`, "version", { matches: "[invalid(" })).toBe(false);
+  });
 });
 
 describe("checkTomlKey", () => {

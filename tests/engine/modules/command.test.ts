@@ -30,4 +30,14 @@ describe("runCommandCheck", () => {
     });
     expect(result.pass).toBe(false);
   });
+
+  it("returns false (not a crash) when output_matches is an invalid regex", async () => {
+    const result = await runCommandCheck({
+      run: "echo hello",
+      exit_code: 0,
+      output_matches: "[invalid(",
+    });
+    expect(result.pass).toBe(false);
+    expect(result.reason).toContain("invalid regex");
+  });
 });

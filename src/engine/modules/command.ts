@@ -29,7 +29,13 @@ export async function runCommandCheck(
 
   if (options.output_matches) {
     const stdout = new TextDecoder().decode(proc.stdout);
-    if (!new RegExp(options.output_matches).test(stdout)) {
+    let re: RegExp;
+    try {
+      re = new RegExp(options.output_matches);
+    } catch {
+      return { pass: false, reason: `invalid regex in output_matches: ${options.output_matches}` };
+    }
+    if (!re.test(stdout)) {
       return {
         pass: false,
         reason: `output did not match /${options.output_matches}/`,

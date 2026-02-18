@@ -18,7 +18,13 @@ function evaluateKeyCheck(value: unknown, check: KeyCheck): boolean {
   if (check.exists !== undefined) return check.exists ? value !== undefined : value === undefined;
   const str = String(value);
   if (check.equals !== undefined) return str === check.equals;
-  if (check.matches !== undefined) return new RegExp(check.matches).test(str);
+  if (check.matches !== undefined) {
+    try {
+      return new RegExp(check.matches).test(str);
+    } catch {
+      return false;
+    }
+  }
   return false;
 }
 
