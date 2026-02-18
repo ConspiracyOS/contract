@@ -2,7 +2,7 @@
 import type { Check, CheckResult, Contract, SkipIf } from "./types";
 import { checkRegexInFile, checkNoRegexInFile } from "./modules/regex";
 import { checkPathExists, checkPathNotExists } from "./modules/filesystem";
-import { checkYamlKey, checkJsonKey } from "./modules/config";
+import { checkYamlKey, checkJsonKey, checkTomlKey } from "./modules/config";
 import { checkEnvVar, checkNoEnvVar, checkCommandAvailable } from "./modules/env";
 import { runCommandCheck } from "./modules/command";
 import { runScriptCheck } from "./modules/script";
@@ -54,6 +54,10 @@ async function runSingleCheck(
   if (c["json_key"]) {
     const m = c["json_key"] as { path: string; key: string; equals?: string; matches?: string; exists?: boolean };
     return { pass: await checkJsonKey(`${projectRoot}/${m.path}`, m.key, m) };
+  }
+  if (c["toml_key"]) {
+    const m = c["toml_key"] as { path: string; key: string; equals?: string; matches?: string; exists?: boolean };
+    return { pass: await checkTomlKey(`${projectRoot}/${m.path}`, m.key, m) };
   }
   if (c["env_var"]) {
     const m = c["env_var"] as { name: string; equals?: string; matches?: string };
