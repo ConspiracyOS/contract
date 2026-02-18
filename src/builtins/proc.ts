@@ -1,4 +1,5 @@
 // src/builtins/proc.ts
+// @contract:C-PROC03:exempt:contract-definition-file-contains-TODO-as-literal-text
 // Built-in process contracts as YAML strings — bundled with binary
 
 export const PROC_CONTRACTS = [
@@ -49,7 +50,8 @@ checks:
 description: worktrees/ must be gitignored
 type: atomic
 trigger: commit
-scope: global
+scope:
+  paths: [".gitignore"]
 checks:
   - name: worktrees in .gitignore
     regex_in_file:
