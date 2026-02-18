@@ -4,7 +4,7 @@ import { auditCommand } from "./commands/audit";
 import { initCommand } from "./commands/init";
 import { installCommand } from "./commands/install";
 import { vaultGet, vaultSet, vaultList, vaultExport, vaultInit } from "./commands/vault";
-import { contractList, contractCheck } from "./commands/contract";
+import { contractList, contractCheck, contractNew } from "./commands/contract";
 
 const program = new Command();
 
@@ -51,5 +51,6 @@ contractCmd
   .description("Run a single contract by ID")
   .option("--trigger <trigger>", "Override trigger context")
   .action(contractCheck);
+contractCmd.command("new").description("Scaffold a new contract interactively").action(contractNew);
 
 program.parse();
