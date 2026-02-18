@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { auditCommand } from "./commands/audit";
 import { initCommand } from "./commands/init";
 import { installCommand } from "./commands/install";
+import { vaultGet, vaultSet, vaultList, vaultExport, vaultInit } from "./commands/vault";
 
 const program = new Command();
 
@@ -33,5 +34,13 @@ program
   .action(async () => {
     await installCommand();
   });
+
+const vault = program.command("vault").description("Manage encrypted project secrets");
+
+vault.command("get <key>").description("Print a secret value").action(vaultGet);
+vault.command("set <key> <value>").description("Store a secret value").action(vaultSet);
+vault.command("list").description("List all secret keys (no values)").action(vaultList);
+vault.command("export").description("Print export statements for shell sourcing").action(vaultExport);
+vault.command("init").description("Initialise empty vault (requires .vault_password)").action(vaultInit);
 
 program.parse();
