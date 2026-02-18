@@ -73,4 +73,33 @@ checks:
     on_fail: warn
     skip_if:
       path_not_exists: "tmp"`,
+
+  // C-DOC01: ARCHITECTURE.md must exist
+  `id: C-DOC01
+description: docs/ARCHITECTURE.md must exist
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: ARCHITECTURE.md present
+    path_exists:
+      path: docs/ARCHITECTURE.md
+    on_fail: fail
+    skip_if:
+      path_not_exists: docs`,
+
+  // C-DOC02: docs/ markdown files must declare type header
+  `id: C-DOC02
+description: Markdown files in docs/ must have a type header
+type: atomic
+trigger: commit
+scope:
+  paths: ["docs/*.md"]
+checks:
+  - name: type header present
+    regex_in_file:
+      pattern: "<!-- type:"
+    on_fail: warn
+    skip_if:
+      path_not_exists: docs`,
 ];
