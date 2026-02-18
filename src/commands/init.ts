@@ -50,6 +50,7 @@ export async function initCommand(): Promise<void> {
       audit_on: ["commit", "pr"],
       behavioral_on: ["merge"],
       require_coverage: requireCoverage,
+      coverage_paths: ["src/**/*", "lib/**/*", "app/**/*"],
     },
   };
 
