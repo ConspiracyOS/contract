@@ -1,10 +1,13 @@
 // src/commands/audit.ts
 import { Glob } from "bun";
+import yaml from "js-yaml";
 import { parseContractFile } from "../engine/parser";
 import { runAudit } from "../engine/audit";
 import { printAuditResult } from "../engine/reporter";
 import { loadBuiltinContracts } from "../builtins/index";
 import type { Contract, ContractTrigger } from "../engine/types";
+import type { ProjectConfig } from "../init/config";
+import type { Stack } from "../init/detector";
 import { existsSync } from "fs";
 
 function findProjectRoot(cwd: string): string {
@@ -39,7 +42,15 @@ export async function auditCommand(options: { trigger?: string; noBuiltins?: boo
   const projectRoot = findProjectRoot(process.cwd());
 
   const projectContracts = await loadProjectContracts(projectRoot);
-  const builtins = options.noBuiltins ? [] : loadBuiltinContracts();
+
+  let stacks: Stack[] = [];
+  const configPath = `${projectRoot}/.agent/config.yaml`;
+  if (existsSync(configPath)) {
+    const cfg = yaml.load(Bun.file(configPath).textSync()) as ProjectConfig;
+    stacks = cfg.stack ?? [];
+  }
+
+  const builtins = options.noBuiltins ? [] : loadBuiltinContracts(stacks);
   const contracts = [...builtins, ...projectContracts];
 
   if (contracts.length === 0) {
