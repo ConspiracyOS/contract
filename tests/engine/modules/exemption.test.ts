@@ -37,4 +37,13 @@ describe("findExemption", () => {
     const result = await findExemption(`${TMP}/annotated.rs`, "C-043");
     expect(result).toBeNull();
   });
+
+  it("does not match when contractId contains regex special chars like a dot", async () => {
+    // C-042 should not be matched by a pattern like C.042 (dot = any char)
+    writeFileSync(`${TMP}/dot_id.rs`,
+      `// @contract:C-042:exempt:should-not-match\nfn add() {}\n`);
+    // Looking up "C.042" should NOT match "C-042" in the file
+    const result = await findExemption(`${TMP}/dot_id.rs`, "C.042");
+    expect(result).toBeNull();
+  });
 });

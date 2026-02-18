@@ -24,4 +24,13 @@ describe("evaluateSkipIf", () => {
     expect(evaluateSkipIf({ not_in_ci: true }, "/tmp")).toBe(true);
     if (wasCI) process.env.CI = wasCI;
   });
+
+  it("skips when path_not_exists is resolved relative to projectRoot", () => {
+    // /tmp exists, so path_not_exists: "tmp" with projectRoot="/nonexistent" should skip
+    expect(evaluateSkipIf({ path_not_exists: "definitely-not-here" }, "/tmp")).toBe(true);
+    // /tmp/nonexistent-dir does not exist — should skip
+    expect(evaluateSkipIf({ path_not_exists: "nonexistent-dir" }, "/tmp")).toBe(true);
+    // /tmp itself exists — should NOT skip
+    expect(evaluateSkipIf({ path_not_exists: "" }, "/tmp")).toBe(false);
+  });
 });

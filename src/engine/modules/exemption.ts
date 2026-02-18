@@ -1,8 +1,10 @@
 // src/engine/modules/exemption.ts
 // Matches: // @contract:C-042:exempt:reason-text
 // or:      # @contract:C-042:exempt:reason-text
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const EXEMPTION_RE = (id: string) =>
-  new RegExp(`(?://|#)\\s*@contract:${id}:exempt:(.+)`);
+  new RegExp(`(?://|#)\\s*@contract:${escapeRegExp(id)}:exempt:(.+)`);
 
 interface Exemption {
   reason: string;

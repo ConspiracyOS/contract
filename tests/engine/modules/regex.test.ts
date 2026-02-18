@@ -37,3 +37,10 @@ describe("checkNoRegexInFile", () => {
     expect(result).toBe(false);
   });
 });
+
+describe("invalid regex handling", () => {
+  it("returns false (not a crash) when pattern is invalid regex syntax", async () => {
+    const result = await checkRegexInFile(`${TMP}/has_proptest.rs`, "(unclosed");
+    expect(result).toBe(false);
+  });
+});

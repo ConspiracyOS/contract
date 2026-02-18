@@ -8,7 +8,7 @@ import { loadBuiltinContracts } from "../builtins/index";
 import type { Contract, ContractTrigger } from "../engine/types";
 import type { ProjectConfig } from "../init/config";
 import type { Stack } from "../init/detector";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 
 function findProjectRoot(cwd: string): string {
   let dir = cwd;
@@ -18,6 +18,7 @@ function findProjectRoot(cwd: string): string {
     }
     dir = dir.split("/").slice(0, -1).join("/") || "/";
   }
+  console.warn(`Warning: no project root found from ${cwd} — using cwd as root`);
   return cwd;
 }
 
@@ -26,7 +27,7 @@ async function loadProjectContracts(projectRoot: string): Promise<Contract[]> {
   if (!existsSync(contractDir)) return [];
 
   const contracts: Contract[] = [];
-  const glob = new Glob("*.yaml");
+  const glob = new Glob("**/*.yaml");
   for await (const file of glob.scan({ cwd: contractDir, absolute: true })) {
     try {
       contracts.push(parseContractFile(file));
@@ -46,7 +47,7 @@ export async function auditCommand(options: { trigger?: string; noBuiltins?: boo
   let stacks: Stack[] = [];
   const configPath = `${projectRoot}/.agent/config.yaml`;
   if (existsSync(configPath)) {
-    const cfg = yaml.load(Bun.file(configPath).textSync()) as ProjectConfig;
+    const cfg = yaml.load(readFileSync(configPath, "utf8")) as ProjectConfig;
     stacks = cfg.stack ?? [];
   }
 

@@ -10,10 +10,10 @@ import { findExemption } from "./modules/exemption";
 import { GLOBAL_SCOPE_SENTINEL } from "./scope";
 import { existsSync } from "fs";
 
-export function evaluateSkipIf(skipIf: SkipIf | undefined, _projectRoot: string): boolean {
+export function evaluateSkipIf(skipIf: SkipIf | undefined, projectRoot: string): boolean {
   if (!skipIf) return false;
   if (skipIf.env_var_unset && process.env[skipIf.env_var_unset] === undefined) return true;
-  if (skipIf.path_not_exists && !existsSync(skipIf.path_not_exists)) return true;
+  if (skipIf.path_not_exists && !existsSync(`${projectRoot}/${skipIf.path_not_exists}`)) return true;
   if (skipIf.not_in_ci && !process.env.CI) return true;
   return false;
 }

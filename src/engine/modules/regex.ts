@@ -1,7 +1,11 @@
 // src/engine/modules/regex.ts
 export async function checkRegexInFile(filePath: string, pattern: string): Promise<boolean> {
   const content = await Bun.file(filePath).text();
-  return new RegExp(pattern, "m").test(content);
+  try {
+    return new RegExp(pattern, "m").test(content);
+  } catch {
+    return false;
+  }
 }
 
 export async function checkNoRegexInFile(filePath: string, pattern: string): Promise<boolean> {

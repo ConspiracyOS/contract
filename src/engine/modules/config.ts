@@ -30,10 +30,20 @@ export async function checkYamlKey(filePath: string, key: string, check: KeyChec
 
 export async function checkJsonKey(filePath: string, key: string, check: KeyCheck): Promise<boolean> {
   const content = await Bun.file(filePath).text();
-  const parsed = JSON.parse(content);
-  return evaluateKeyCheck(getNestedValue(parsed, key), check);
+  try {
+    const parsed = JSON.parse(content);
+    return evaluateKeyCheck(getNestedValue(parsed, key), check);
+  } catch {
+    return false;
+  }
 }
 
-export async function checkTomlKey(_filePath: string, _key: string, _check: KeyCheck): Promise<boolean> {
-  throw new Error("toml_key: TOML parsing not yet implemented");
+export async function checkTomlKey(filePath: string, key: string, check: KeyCheck): Promise<boolean> {
+  const content = await Bun.file(filePath).text();
+  try {
+    const parsed = Bun.TOML.parse(content);
+    return evaluateKeyCheck(getNestedValue(parsed, key), check);
+  } catch {
+    return false;
+  }
 }
