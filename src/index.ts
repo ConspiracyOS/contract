@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { auditCommand } from "./commands/audit";
 import { initCommand } from "./commands/init";
+import { installCommand } from "./commands/install";
 
 const program = new Command();
 
@@ -24,6 +25,13 @@ program
   .description("Onboard a project with contracts, hooks, and CI")
   .action(async () => {
     await initCommand();
+  });
+
+program
+  .command("install")
+  .description("Re-install hooks and CI workflows (idempotent)")
+  .action(async () => {
+    await installCommand();
   });
 
 program.parse();

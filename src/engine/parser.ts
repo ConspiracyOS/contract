@@ -1,6 +1,7 @@
 // src/engine/parser.ts
 import yaml from "js-yaml";
 import { z } from "zod";
+import { readFileSync } from "fs";
 import type { Contract } from "./types";
 
 const SkipIfSchema = z.object({
@@ -42,6 +43,6 @@ export function parseContract(rawYaml: string): Contract {
 }
 
 export function parseContractFile(path: string): Contract {
-  const content = Bun.file(path).textSync();
+  const content = readFileSync(path, "utf8");
   return parseContract(content);
 }
