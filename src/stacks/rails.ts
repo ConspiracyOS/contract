@@ -33,10 +33,9 @@ type: atomic
 trigger: commit
 scope:
   paths: ["app/**/*.rb"]
-  exclude: ["**/*_test.rb", "spec/**/*"]
 checks:
   - name: no bare find_by without nil guard
     no_regex_in_file:
-      pattern: '\\.find_by\\([^)]+\\)\\.'
+      pattern: 'find_by\\([^)]+\\)\\.'
     on_fail: require_exemption`,
 ];
