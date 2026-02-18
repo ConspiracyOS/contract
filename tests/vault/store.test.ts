@@ -30,9 +30,10 @@ describe("vault store", () => {
     expect(data["DB_URL"]).toBeUndefined();
   });
 
-  it("throws when no password file exists", () => {
-    const emptyRoot = `${TMP}/no-password`;
-    mkdirSync(`${emptyRoot}/.agent`, { recursive: true });
-    expect(() => readVault(emptyRoot)).toThrow();
+  it("throws when vault exists but no password file", () => {
+    const noPassRoot = `${TMP}/no-password`;
+    mkdirSync(`${noPassRoot}/.agent`, { recursive: true });
+    writeFileSync(`${noPassRoot}/.agent/vault`, "fake-vault-content");
+    expect(() => readVault(noPassRoot)).toThrow();
   });
 });

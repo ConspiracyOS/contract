@@ -8,8 +8,8 @@ const VAULT_PATH = (root: string) => `${root}/.agent/vault`;
 
 export function readVault(projectRoot: string): Record<string, string> {
   const vaultPath = VAULT_PATH(projectRoot);
-  const passphrase = resolvePassphrase(projectRoot);
   if (!existsSync(vaultPath)) return {};
+  const passphrase = resolvePassphrase(projectRoot);
   const plaintext = decrypt(readFileSync(vaultPath, "utf8"), passphrase);
   return (yaml.load(plaintext) as Record<string, string>) ?? {};
 }
