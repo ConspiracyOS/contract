@@ -47,8 +47,10 @@ jobs:
     steps:
       ${checkout}
       - name: Install agent-config
+        env:
+          GH_TOKEN: \${{ secrets.AGENT_CONFIG_TOKEN }}
         run: |
-          curl -fsSL https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-linux-x64 -o /usr/local/bin/agent-config
+          gh release download v0.2.0 --repo vegardkrogh/agent-config-cli --pattern agent-config-linux-x64 --output /usr/local/bin/agent-config
           chmod +x /usr/local/bin/agent-config
       - name: Run contract audit
         run: agent-config audit --trigger pr
@@ -72,8 +74,10 @@ jobs:
     steps:
       ${checkout}
       - name: Install agent-config
+        env:
+          GH_TOKEN: \${{ secrets.AGENT_CONFIG_TOKEN }}
         run: |
-          curl -fsSL https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-linux-x64 -o /usr/local/bin/agent-config
+          gh release download v0.2.0 --repo vegardkrogh/agent-config-cli --pattern agent-config-linux-x64 --output /usr/local/bin/agent-config
           chmod +x /usr/local/bin/agent-config
       - name: Run behavioral contracts
         run: agent-config audit --trigger merge
