@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install agent-config
         run: |
-          curl -L https://github.com/${config.github.org}/agent-config-cli/releases/latest/download/agent-config-linux-x64 -o /usr/local/bin/agent-config
+          curl -fsSL https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-linux-x64 -o /usr/local/bin/agent-config
           chmod +x /usr/local/bin/agent-config
       - name: Run contract audit
         run: agent-config audit --trigger pr
@@ -65,6 +65,10 @@ jobs:
     runs-on: ${runner}
     steps:
       - uses: actions/checkout@v4
+      - name: Install agent-config
+        run: |
+          curl -fsSL https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-linux-x64 -o /usr/local/bin/agent-config
+          chmod +x /usr/local/bin/agent-config
       - name: Run behavioral contracts
         run: agent-config audit --trigger merge
         continue-on-error: true
