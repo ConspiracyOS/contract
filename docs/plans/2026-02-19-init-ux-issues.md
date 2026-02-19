@@ -56,15 +56,15 @@ The generated `coverage_paths` (`src/**/*`, `lib/**/*`, `app/**/*`) don't match 
 
 ## Issue 5: Existing `contracts/` directory creates naming confusion
 
-**Severity**: Low–Medium
+**Severity**: Low
 
-`spectre_monorepo` has a `contracts/` directory at root containing behavioral shell scripts. `agent-config` generates `.agent/contracts/` for its YAML contracts. The two coexist silently — `agent-config contract list` won't find the shell scripts, and there's no guidance about the difference.
+`spectre_monorepo` has a `contracts/` directory at root. `agent-config` generates `.agent/contracts/` for its YAML contracts. The two coexist silently.
 
-**Fix**: During init, detect a root-level `contracts/` (or `tests/contracts/`) directory and print an informational note:
+**Fix**: During init, if a root-level `contracts/` directory exists, print a one-line warning:
 ```
-Note: found existing contracts/ — agent-config uses .agent/contracts/ for YAML contracts.
-Your existing scripts are separate and unaffected.
+Note: found contracts/ — agent-config uses .agent/contracts/ for its contracts (separate).
 ```
+No migration tooling needed — `contracts/` is not a standard directory name and the user knows what their own directory is for.
 
 ---
 
@@ -96,6 +96,6 @@ The workflow writes all files first, then asks about branch protection. If the u
 | 2 | Default project name includes worktree suffix | Medium | `src/commands/init.ts` |
 | 3 | Overwrites existing AGENTS.md without warning | High | `src/init/github.ts` |
 | 4 | Coverage paths don't match non-standard layouts | Medium | `src/commands/init.ts` |
-| 5 | No note about existing `contracts/` directory | Low | `src/commands/init.ts` |
+| 5 | No warning about existing `contracts/` directory | Low | `src/commands/init.ts` |
 | 6 | Re-running init silently overwrites config | Medium | `src/commands/init.ts` |
 | 7 | Branch protection prompt after writes | Low | `src/commands/init.ts` |
