@@ -2,7 +2,7 @@
 import { Glob } from "bun";
 import type { AuditResult, Contract, ContractTrigger } from "./types";
 import { resolveScope } from "./scope";
-import { runCheck } from "./runner";
+import { runCheck, evaluateSkipIf } from "./runner";
 
 export interface CoverageOptions {
   enabled: boolean;
@@ -21,6 +21,16 @@ export async function auditContract(
       checkName: check.name,
       status: "skip" as const,
       message: `trigger=${contract.trigger}, current=${trigger}`,
+    }));
+  }
+
+  if (evaluateSkipIf(contract.skip_if, projectRoot)) {
+    return contract.checks.map(check => ({
+      contractId: contract.id,
+      contractDescription: contract.description,
+      checkName: check.name,
+      status: "skip" as const,
+      message: "contract skip_if condition met",
     }));
   }
 

@@ -1,5 +1,6 @@
 // src/engine/runner.ts
 import type { Check, CheckResult, Contract, SkipIf } from "./types";
+import { spawnSync } from "child_process";
 import { checkRegexInFile, checkNoRegexInFile } from "./modules/regex";
 import { checkPathExists, checkPathNotExists } from "./modules/filesystem";
 import { checkYamlKey, checkJsonKey, checkTomlKey } from "./modules/config";
@@ -15,6 +16,10 @@ export function evaluateSkipIf(skipIf: SkipIf | undefined, projectRoot: string):
   if (skipIf.env_var_unset && process.env[skipIf.env_var_unset] === undefined) return true;
   if (skipIf.path_not_exists && !existsSync(`${projectRoot}/${skipIf.path_not_exists}`)) return true;
   if (skipIf.not_in_ci && !process.env.CI) return true;
+  if (skipIf.command_not_available) {
+    const result = spawnSync("which", [skipIf.command_not_available], { encoding: "utf8" });
+    if (result.status !== 0) return true;
+  }
   return false;
 }
 

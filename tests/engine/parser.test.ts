@@ -28,6 +28,25 @@ checks:
     expect(() => parseContract(yaml)).toThrow();
   });
 
+  it("parses contract-level skip_if", () => {
+    const yaml = `
+id: C-003
+description: Skip-guarded contract
+type: holistic
+trigger: pr
+scope: global
+skip_if:
+  path_not_exists: spectre_rs/target/release/spectre
+checks:
+  - name: some check
+    command:
+      run: "echo ok"
+    on_fail: fail
+`;
+    const contract = parseContract(yaml);
+    expect(contract.skip_if).toEqual({ path_not_exists: "spectre_rs/target/release/spectre" });
+  });
+
   it("parses scope with paths and excludes", () => {
     const yaml = `
 id: C-002

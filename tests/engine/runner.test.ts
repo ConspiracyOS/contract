@@ -33,4 +33,13 @@ describe("evaluateSkipIf", () => {
     // /tmp itself exists — should NOT skip
     expect(evaluateSkipIf({ path_not_exists: "" }, "/tmp")).toBe(false);
   });
+
+  it("skips when command_not_available refers to a non-existent command", () => {
+    expect(evaluateSkipIf({ command_not_available: "definitely-not-a-real-command-xyz" }, "/tmp")).toBe(true);
+  });
+
+  it("does not skip when command_not_available refers to an available command", () => {
+    // 'sh' is always available
+    expect(evaluateSkipIf({ command_not_available: "sh" }, "/tmp")).toBe(false);
+  });
 });

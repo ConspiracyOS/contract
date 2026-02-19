@@ -8,6 +8,7 @@ const SkipIfSchema = z.object({
   env_var_unset: z.string().optional(),
   path_not_exists: z.string().optional(),
   not_in_ci: z.boolean().optional(),
+  command_not_available: z.string().optional(),
 }).optional();
 
 const CheckSchema = z.object({
@@ -30,6 +31,7 @@ const ContractSchema = z.object({
   type: z.enum(["atomic", "holistic"]),
   trigger: z.enum(["commit", "pr", "merge", "schedule"]),
   scope: ScopeSchema,
+  skip_if: SkipIfSchema,
   checks: z.array(CheckSchema),
 });
 

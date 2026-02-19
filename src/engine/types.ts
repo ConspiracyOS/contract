@@ -13,6 +13,7 @@ export interface SkipIf {
   env_var_unset?: string;
   path_not_exists?: string;
   not_in_ci?: boolean;
+  command_not_available?: string;
 }
 
 // --- Check module types ---
@@ -82,6 +83,7 @@ export interface Contract {
   type: ContractType;
   trigger: ContractTrigger;
   scope: ContractScope | "global";
+  skip_if?: SkipIf;
   checks: Check[];
 }
 

@@ -10,7 +10,9 @@ checks:
     command:
       run: "mix format --check-formatted"
       exit_code: 0
-    on_fail: fail`,
+    on_fail: fail
+    skip_if:
+      command_not_available: mix`,
 
   `id: C-EX02
 description: mix credo strict must pass
@@ -22,7 +24,9 @@ checks:
     command:
       run: "mix credo --strict"
       exit_code: 0
-    on_fail: fail`,
+    on_fail: fail
+    skip_if:
+      command_not_available: mix`,
 
   `id: C-EX04
 description: All umbrella apps must pass mix test
