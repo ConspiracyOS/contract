@@ -68,10 +68,13 @@ export async function initCommand(): Promise<void> {
     default: true,
   });
 
+  const hasSubmodules = existsSync(`${cwd}/.gitmodules`);
+
   const config = {
     project: projectName!,
     github: { org: githubOrg!, repo: githubRepo!, runner },
     stack: stacks,
+    ...(hasSubmodules ? { submodules: true } : {}),
     contracts: {
       audit_on: ["commit", "pr"],
       behavioral_on: ["merge"],

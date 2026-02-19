@@ -7,6 +7,7 @@ export interface ProjectConfig {
   project: string;
   github: { org: string; repo: string; runner: "github-hosted" | "self-hosted" };
   stack: Stack[];
+  submodules?: boolean;
   contracts: {
     audit_on: string[];
     behavioral_on: string[];

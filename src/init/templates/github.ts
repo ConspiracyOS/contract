@@ -32,6 +32,9 @@ export function generatePRTemplate(): string {
 
 export function generateCIWorkflow(config: ProjectConfig): string {
   const runner = config.github.runner === "self-hosted" ? "self-hosted" : "ubuntu-latest";
+  const checkout = config.submodules
+    ? `- uses: actions/checkout@v4\n        with:\n          submodules: recursive`
+    : `- uses: actions/checkout@v4`;
   return `name: CI
 
 on:
@@ -42,7 +45,7 @@ jobs:
   audit:
     runs-on: ${runner}
     steps:
-      - uses: actions/checkout@v4
+      - ${checkout}
       - name: Install agent-config
         run: |
           curl -fsSL https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-linux-x64 -o /usr/local/bin/agent-config
@@ -54,6 +57,9 @@ jobs:
 
 export function generatePostMergeWorkflow(config: ProjectConfig): string {
   const runner = config.github.runner === "self-hosted" ? "self-hosted" : "ubuntu-latest";
+  const checkout = config.submodules
+    ? `- uses: actions/checkout@v4\n        with:\n          submodules: recursive`
+    : `- uses: actions/checkout@v4`;
   return `name: Post-merge
 
 on:
@@ -64,7 +70,7 @@ jobs:
   behavioral-contracts:
     runs-on: ${runner}
     steps:
-      - uses: actions/checkout@v4
+      - ${checkout}
       - name: Install agent-config
         run: |
           curl -fsSL https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-linux-x64 -o /usr/local/bin/agent-config
