@@ -38,4 +38,18 @@ checks:
     no_regex_in_file:
       pattern: 'find_by\\([^)]+\\)\\.'
     on_fail: require_exemption`,
+
+  `id: C-RB04
+description: Bullet gem must be present for N+1 detection
+type: atomic
+trigger: commit
+scope:
+  paths: ["Gemfile"]
+checks:
+  - name: bullet gem in Gemfile
+    regex_in_file:
+      pattern: "bullet"
+    on_fail: warn
+    skip_if:
+      path_not_exists: Gemfile`,
 ];

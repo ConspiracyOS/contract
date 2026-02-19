@@ -24,6 +24,19 @@ checks:
     no_regex_in_file:
       pattern: 'as any(?!\s*\/\/ @contract)'
     on_fail: require_exemption`,
+
+  `id: C-TS03
+description: use client directive requires annotation
+type: atomic
+trigger: commit
+scope:
+  paths: ["src/**/*.tsx"]
+  exclude: ["**/*.test.tsx"]
+checks:
+  - name: use client requires annotation
+    no_regex_in_file:
+      pattern: '"use client"(?!.*@pattern:client-component)'
+    on_fail: require_exemption`,
 ];
 
 export const TS_CI_STEPS = `

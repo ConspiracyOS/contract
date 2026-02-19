@@ -508,3 +508,20 @@ Expected: All pass
 git add src/builtins/index.ts src/init/detector.ts tests/init/detector.test.ts
 git commit -m "feat(stacks): wire shell stack into builtins and detector"
 ```
+
+---
+
+## Phase 2 Addendum: Language Coverage Hardening
+
+Keep these changes scoped to Phase 2 (no Phase 3 renaming):
+
+1. Add Go stack contracts (`C-GO01`, `C-GO02`, `C-GO03`) in `src/stacks/go.ts`.
+2. Add JavaScript stack contracts (`C-JS01`, `C-JS02`, `C-JS03`) in `src/stacks/javascript.ts`.
+3. Wire Go + JavaScript stacks into builtin loading in `src/builtins/index.ts`.
+4. Harden stack detector semantics in `src/init/detector.ts`:
+   - TypeScript requires `tsconfig.json` (no `package.json`-only false positive).
+   - Rails requires `config/application.rb` (no `Gemfile`-only false positive).
+   - JavaScript detects with `package.json` and no `tsconfig.json`.
+   - Go detects with `go.mod`.
+5. Add detector tests for the new rules in `tests/init/detector.test.ts`.
+6. Add builtin parse coverage tests for Go + JavaScript contracts in `tests/integration/audit.test.ts`.

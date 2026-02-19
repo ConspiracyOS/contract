@@ -3,20 +3,18 @@
 // Built-in process contracts as YAML strings — bundled with binary
 
 export const PROC_CONTRACTS = [
-  // C-PROC01: No secrets in git history
-  `id: C-PROC01
-description: No secrets or credentials in git history
+  // C-SEC02: Real secrets scan using gitleaks or trufflehog
+  `id: C-SEC02
+description: Source must pass secrets scan (gitleaks or trufflehog)
 type: atomic
 trigger: pr
 scope: global
 checks:
-  - name: trufflehog or gitleaks scan
+  - name: secrets scan
     command:
-      run: "git log --all --full-history --oneline | head -1"
+      run: "if command -v gitleaks >/dev/null 2>&1; then gitleaks detect --no-git --source . --exit-code 1 2>&1; elif command -v trufflehog >/dev/null 2>&1; then trufflehog filesystem . --only-verified --fail 2>&1; else echo 'No secrets scanner found. Install: brew install gitleaks'; exit 1; fi"
       exit_code: 0
-    on_fail: warn
-    skip_if:
-      env_var_unset: CI`,
+    on_fail: warn`,
 
   // C-PROC02: PR description references issue
   `id: C-PROC02

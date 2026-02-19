@@ -41,4 +41,18 @@ checks:
     on_fail: fail
     skip_if:
       path_not_exists: "apps"`,
+
+  `id: C-EX03
+description: Public Elixir functions must have @spec
+type: atomic
+trigger: pr
+scope: global
+checks:
+  - name: credo specs check
+    command:
+      run: "mix credo --only Credo.Check.Readability.Specs --strict 2>&1 | tail -3"
+      exit_code: 0
+    on_fail: warn
+    skip_if:
+      command_not_available: mix`,
 ];

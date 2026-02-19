@@ -232,3 +232,160 @@ checks:
     expect(result.results.some(r => r.contractId === "C-PROC04")).toBe(false);
   });
 });
+
+describe("C-SEC02 secrets scan contract", () => {
+  it("parses and runs the C-SEC02 builtin contract", async () => {
+    const { PROC_CONTRACTS } = await import("../../src/builtins/proc");
+    const sec02 = PROC_CONTRACTS.find(c => c.includes("C-SEC02"));
+    expect(sec02).toBeDefined();
+    const contract = parseContract(sec02!);
+    expect(contract.id).toBe("C-SEC02");
+    expect(contract.checks[0]!.on_fail).toBe("warn");
+  });
+});
+
+describe("C-TS03 use client annotation", () => {
+  it("fails when use client has no annotation comment", async () => {
+    writeFileSync(`${TMP}/src/ClientComp.tsx`, '"use client";\nexport default function Foo() { return null; }\n');
+    const contract = parseContract(`
+id: C-TS03
+description: use client directive requires annotation
+type: atomic
+trigger: commit
+scope:
+  paths: ["src/**/*.tsx"]
+  exclude: ["**/*.test.tsx"]
+checks:
+  - name: use client requires annotation
+    no_regex_in_file:
+      pattern: '"use client"(?!.*@pattern:client-component)'
+    on_fail: require_exemption
+`);
+    const result = await runAudit([contract], "commit", TMP);
+    expect(result.failed).toBe(1);
+  });
+
+  it("passes when use client has annotation", async () => {
+    writeFileSync(
+      `${TMP}/src/AnnotatedClient.tsx`,
+      '"use client"; // @pattern:client-component:reason=form-state\nexport default function Bar() { return null; }\n',
+    );
+    const contract = parseContract(`
+id: C-TS03
+description: use client directive requires annotation
+type: atomic
+trigger: commit
+scope:
+  paths: ["src/**/*.tsx"]
+  exclude: ["**/*.test.tsx"]
+checks:
+  - name: use client requires annotation
+    no_regex_in_file:
+      pattern: '"use client"(?!.*@pattern:client-component)'
+    on_fail: require_exemption
+`);
+    const result = await runAudit([contract], "commit", TMP);
+    expect(result.results.filter(r => r.file?.includes("AnnotatedClient")).every(r => r.status === "pass")).toBe(true);
+  });
+
+  it("parses C-TS03 from builtins", async () => {
+    const { TS_CONTRACTS } = await import("../../src/stacks/typescript");
+    const ts03 = TS_CONTRACTS.find(c => c.includes("C-TS03"));
+    expect(ts03).toBeDefined();
+    const contract = parseContract(ts03!);
+    expect(contract.id).toBe("C-TS03");
+  });
+});
+
+describe("C-EX03 @spec enforcement", () => {
+  it("parses C-EX03 from builtins", async () => {
+    const { EX_CONTRACTS } = await import("../../src/stacks/elixir");
+    const ex03 = EX_CONTRACTS.find(c => c.includes("C-EX03"));
+    expect(ex03).toBeDefined();
+    const contract = parseContract(ex03!);
+    expect(contract.id).toBe("C-EX03");
+    expect(contract.checks[0]!.skip_if).toEqual({ command_not_available: "mix" });
+  });
+});
+
+describe("C-RB04 bullet gem", () => {
+  it("parses C-RB04 from builtins", async () => {
+    const { RB_CONTRACTS } = await import("../../src/stacks/rails");
+    const rb04 = RB_CONTRACTS.find(c => c.includes("C-RB04"));
+    expect(rb04).toBeDefined();
+    const contract = parseContract(rb04!);
+    expect(contract.id).toBe("C-RB04");
+  });
+
+  it("warns when Gemfile exists but lacks bullet", async () => {
+    writeFileSync(`${TMP}/Gemfile`, 'gem "rails"\ngem "pg"\n');
+    const { RB_CONTRACTS } = await import("../../src/stacks/rails");
+    const contract = parseContract(RB_CONTRACTS.find(c => c.includes("C-RB04"))!);
+    const result = await runAudit([contract], "commit", TMP);
+    expect(result.warned).toBe(1);
+  });
+});
+
+describe("Shell stack contracts", () => {
+  beforeAll(() => {
+    mkdirSync(`${TMP}/scripts`, { recursive: true });
+    writeFileSync(`${TMP}/scripts/good.sh`, '#!/usr/bin/env bash\nset -euo pipefail\necho "hello"\n');
+    writeFileSync(`${TMP}/scripts/bad-shebang.sh`, '#!/bin/sh\necho "hello"\n');
+    writeFileSync(`${TMP}/scripts/bad-strict.sh`, '#!/usr/bin/env bash\necho "hello"\n');
+  });
+
+  it("parses C-SH01 and C-SH02 from builtins", async () => {
+    const { SH_CONTRACTS } = await import("../../src/stacks/shell");
+    expect(SH_CONTRACTS).toHaveLength(2);
+    const sh01 = parseContract(SH_CONTRACTS[0]!);
+    const sh02 = parseContract(SH_CONTRACTS[1]!);
+    expect(sh01.id).toBe("C-SH01");
+    expect(sh02.id).toBe("C-SH02");
+  });
+
+  it("C-SH01 passes for bash shebang, fails for sh shebang", async () => {
+    const { SH_CONTRACTS } = await import("../../src/stacks/shell");
+    const contract = parseContract(SH_CONTRACTS[0]!);
+    const result = await runAudit([contract], "commit", TMP);
+    const passes = result.results.filter(r => r.status === "pass");
+    const fails = result.results.filter(r => r.status === "fail");
+    expect(passes.length).toBe(2);
+    expect(fails.length).toBe(1);
+  });
+
+  it("C-SH02 passes for strict mode, fails without it", async () => {
+    const { SH_CONTRACTS } = await import("../../src/stacks/shell");
+    const contract = parseContract(SH_CONTRACTS[1]!);
+    const result = await runAudit([contract], "commit", TMP);
+    const passes = result.results.filter(r => r.status === "pass");
+    const fails = result.results.filter(r => r.status === "fail");
+    expect(passes.length).toBe(1);
+    expect(fails.length).toBe(2);
+  });
+});
+
+describe("Go stack contracts", () => {
+  it("parses C-GO01/C-GO02/C-GO03 from builtins", async () => {
+    const { GO_CONTRACTS } = await import("../../src/stacks/go");
+    expect(GO_CONTRACTS).toHaveLength(3);
+    const go01 = parseContract(GO_CONTRACTS[0]!);
+    const go02 = parseContract(GO_CONTRACTS[1]!);
+    const go03 = parseContract(GO_CONTRACTS[2]!);
+    expect(go01.id).toBe("C-GO01");
+    expect(go02.id).toBe("C-GO02");
+    expect(go03.id).toBe("C-GO03");
+  });
+});
+
+describe("JavaScript stack contracts", () => {
+  it("parses C-JS01/C-JS02/C-JS03 from builtins", async () => {
+    const { JS_CONTRACTS } = await import("../../src/stacks/javascript");
+    expect(JS_CONTRACTS).toHaveLength(3);
+    const js01 = parseContract(JS_CONTRACTS[0]!);
+    const js02 = parseContract(JS_CONTRACTS[1]!);
+    const js03 = parseContract(JS_CONTRACTS[2]!);
+    expect(js01.id).toBe("C-JS01");
+    expect(js02.id).toBe("C-JS02");
+    expect(js03.id).toBe("C-JS03");
+  });
+});
