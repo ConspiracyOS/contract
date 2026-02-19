@@ -41,7 +41,7 @@ export async function initCommand(): Promise<void> {
     console.log("Note: found contracts/ — agent-config uses .agent/contracts/ for YAML contracts (separate).\n");
   }
 
-  const projectName = await input({ message: "Project name:", default: projectNameFromGit(cwd) ?? cwd.split("/").pop() });
+  const projectName = await input({ message: "Project name:", default: projectNameFromGit(cwd) ?? cwd.split("/").pop() ?? "my-project" });
   const githubOrg = await input({ message: "GitHub org/user:" });
   const githubRepo = await input({ message: "GitHub repo name:", default: projectName });
 
