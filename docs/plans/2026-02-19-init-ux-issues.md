@@ -7,18 +7,36 @@
 
 ---
 
+## Design principle: agent-assisted configuration over exhaustive heuristics
+
+Several of the issues below (stack detection, coverage paths, umbrella recognition) could be addressed by building increasingly elaborate scanners — one for submodules, one for Elixir umbrellas, one for Nx monorepos, one for Rust workspaces, and so on. This is the wrong approach.
+
+`agent-config` is tooling *for* AI agents. Agents are a natural fit for the project discovery problem:
+
+> unknown structure → agent explores project → valid config
+
+The right design: `init` produces a minimal, honest scaffold with explicit placeholders where it doesn't know the answer. A companion prompt template (or a `agent-config configure` command) invites the user to run an agent session that reads the project structure and fills in the gaps — coverage paths, per-stack scope patterns, etc.
+
+This keeps the CLI simple and makes the tool self-consistent: you use agents to configure the thing that configures agents.
+
+Issues #1, #4, and #5 below are all instances of the same root cause. They should be resolved by this design principle rather than individual heuristics.
+
+---
+
 ## Issue 1: Stack detection misses submodule-based monorepos
 
-**Severity**: High
+**Severity**: High → **resolved by design principle above**
 
-The detector (`src/init/detector.ts`) checks for stack signal files (`Cargo.toml`, `mix.exs`, `tsconfig.json`, etc.) only at the project root. Monorepos that use git submodules have no such files at root — they live inside the submodule directories, which are empty until `git submodule update --init` is run.
+The detector checks for stack signal files only at the project root. Submodule-based monorepos have no such files at root.
 
-**Observed**: `Detected stacks: (none)` on `spectre_monorepo` — user must manually select all stacks.
+**Observed**: `Detected stacks: (none)` on `spectre_monorepo`.
 
-**Fixes to consider**:
-- Scan 1–2 levels deep in addition to root.
-- Parse `.gitmodules` and infer stacks from submodule names (e.g. `*_rs` → rust, `*_infra_ex` → elixir, `*_ui` → typescript).
-- Check submodule directories even when empty (the directory name as a declared submodule path is itself a signal).
+**Fix**: Rather than scanning deeper or parsing `.gitmodules`, init should acknowledge when detection is incomplete:
+```
+Could not detect stacks automatically. Select manually, or run:
+  agent-config configure
+```
+`configure` (or a documented prompt template) lets an agent explore the project and propose the correct config.
 
 ---
 
@@ -26,11 +44,9 @@ The detector (`src/init/detector.ts`) checks for stack signal files (`Cargo.toml
 
 **Severity**: Medium
 
-`cwd.split("/").pop()` returns the current directory name. When `init` is run inside a git worktree (`spectre_monorepo-agent-test`), the default project name becomes `spectre_monorepo-agent-test` rather than `spectre_monorepo`.
+`cwd.split("/").pop()` returns the current directory name. When `init` is run inside a git worktree the default becomes `spectre_monorepo-agent-test` rather than `spectre_monorepo`.
 
-**Fixes to consider**:
-- Read the project name from the git remote URL (`git remote get-url origin`), stripping the `.git` suffix.
-- Fall back to `cwd.split("/").pop()` only if no remote is available.
+**Fix**: Read from `git remote get-url origin` and strip the `.git` suffix. Fall back to directory name only if no remote is set.
 
 ---
 
@@ -46,36 +62,33 @@ The detector (`src/init/detector.ts`) checks for stack signal files (`Cargo.toml
 
 ## Issue 4: Coverage paths assume conventional layouts — most real projects don't match
 
-**Severity**: High
+**Severity**: High → **resolved by design principle above**
 
-The hardcoded default coverage paths (`src/**/*`, `lib/**/*`, `app/**/*`) assume a small set of conventional project layouts. In practice, many projects diverge:
+The hardcoded defaults (`src/**/*`, `lib/**/*`, `app/**/*`) describe a minority of real project layouts:
 
-- `spectre_monorepo`: code lives at `spectre_rs/**/*`, `spectre_ui/**/*`, `spectre_infra_ex/**/*` (submodule names as top-level dirs)
-- `spectre_gateway`: Elixir umbrella — code lives at `apps/*/lib/**/*.ex`, not `lib/**/*`
-- Phoenix apps, Rails engines, Rust workspaces, and Nx monorepos all have their own conventions
+- `spectre_monorepo`: code at `spectre_rs/**/*`, `spectre_ui/**/*`, `spectre_infra_ex/**/*`
+- `spectre_gateway`: Elixir umbrella — code at `apps/*/lib/**/*.ex`
+- Rust workspaces, Nx monorepos, Rails engines, etc. all differ
 
-When coverage paths don't match, C-PROC04 silently fires on nothing. The user gets no signal that coverage checking is effectively disabled.
+When paths don't match, C-PROC04 silently fires on nothing. The user has no signal that coverage checking is disabled.
 
-**This is not an edge case — it's the common case.** Any project with a non-trivial structure will have wrong coverage paths out of the box.
-
-**Fixes to consider**:
-- During init, scan the project and propose candidate coverage paths based on where actual source files live, show them to the user, and let them edit before writing.
-- For known stack patterns, use better defaults: elixir → `apps/**/lib/**/*`; rust workspace → `*/src/**/*`; etc.
-- At minimum, make it explicit during init that coverage paths need to be verified: "Coverage paths (edit to match your layout): ..."
+**Fix**: Init writes coverage paths as explicit TODOs and prints a clear instruction:
+```yaml
+coverage_paths:
+  # TODO: update these to match your project layout
+  # Run `agent-config configure` to auto-detect, or edit manually.
+  - src/**/*
+```
 
 ---
 
-## Issue 5: Elixir umbrella structure not recognized
+## Issue 5: Elixir umbrella / unconventional app structure not recognized
 
-**Severity**: Medium
+**Severity**: Medium → **resolved by design principle above**
 
-`spectre_gateway` is an Elixir umbrella app — `mix.exs` declares `apps_path: "apps"` and all 6 sub-apps live under `apps/`. The detector correctly identifies `elixir`, but nothing downstream knows it's an umbrella:
+`spectre_gateway` is an Elixir umbrella — code lives at `apps/*/lib/**/*.ex`, not `lib/**/*.ex`. Detector correctly identifies `elixir` but nothing downstream knows about the umbrella shape. Same class of problem as #4.
 
-- Contract scope paths would be written as `lib/**/*.ex` (wrong) — correct is `apps/**/lib/**/*.ex`
-- `mix test` in CI works for umbrellas, but coverage thresholds and per-app scoping don't apply
-- No recognition of Phoenix within the umbrella (`apps/web` has `web_web.ex` naming convention)
-
-**Fix**: Detect umbrella pattern (presence of `apps/` with multiple `mix.exs` files, or `apps_path` in root `mix.exs`) and adjust coverage paths and contract scope suggestions accordingly.
+**Fix**: Same as #4 — defer to `configure` / agent discovery rather than building umbrella-specific heuristics.
 
 ---
 
@@ -83,13 +96,12 @@ When coverage paths don't match, C-PROC04 silently fires on nothing. The user ge
 
 **Severity**: Low
 
-Some projects have a `contracts/` directory at root for their own purposes. `agent-config` generates `.agent/contracts/` for its YAML contracts. The two coexist silently.
+Some projects have a `contracts/` dir at root for their own purposes. Agent-config uses `.agent/contracts/`.
 
-**Fix**: During init, if a root-level `contracts/` directory exists, print a one-line warning:
+**Fix**: One-line warning during init if `contracts/` exists at root:
 ```
 Note: found contracts/ — agent-config uses .agent/contracts/ for its contracts (separate).
 ```
-No migration tooling needed.
 
 ---
 
@@ -97,9 +109,9 @@ No migration tooling needed.
 
 **Severity**: Medium
 
-If `.agent/config.yaml` already exists, `init` overwrites it without prompting. Re-running init by accident destroys the existing configuration.
+If `.agent/config.yaml` already exists, `init` overwrites it without prompting.
 
-**Fix**: Detect existing `.agent/config.yaml` at startup and prompt: "Config already exists — overwrite or abort?" Alternatively, provide an `agent-config config set <key> <value>` command for incremental updates.
+**Fix**: Detect existing config at startup and prompt: "Config already exists — overwrite or abort?"
 
 ---
 
@@ -107,21 +119,21 @@ If `.agent/config.yaml` already exists, `init` overwrites it without prompting. 
 
 **Severity**: Low
 
-The workflow writes all files first, then asks about branch protection. If the user cancels mid-flow, there's no rollback.
+Files are written before the branch protection question is asked. A mid-flow Ctrl-C leaves files written with no rollback.
 
-**Fix**: Move the branch protection confirm to before "Installing…", so the user approves the full plan before any writes happen. Or make it a separate command (`agent-config install --branch-protection`).
+**Fix**: Move the branch protection confirm before "Installing…", or make it a separate command (`agent-config install --branch-protection`).
 
 ---
 
 ## Summary table
 
-| # | Issue | Severity | Area |
-|---|-------|----------|------|
-| 1 | Stack detection misses submodules | High | `src/init/detector.ts` |
-| 2 | Default project name includes worktree suffix | Medium | `src/commands/init.ts` |
-| 3 | Overwrites existing AGENTS.md without warning | High | `src/init/github.ts` |
-| 4 | Coverage paths assume conventional layouts | High | `src/commands/init.ts` |
-| 5 | Elixir umbrella structure not recognized | Medium | `src/init/detector.ts` |
-| 6 | No warning about existing `contracts/` directory | Low | `src/commands/init.ts` |
-| 7 | Re-running init silently overwrites config | Medium | `src/commands/init.ts` |
-| 8 | Branch protection prompt fires after writes | Low | `src/commands/init.ts` |
+| # | Issue | Severity | Resolution path |
+|---|-------|----------|-----------------|
+| 1 | Stack detection misses submodules | High | `configure` command / agent discovery |
+| 2 | Default project name includes worktree suffix | Medium | Read from git remote URL |
+| 3 | Overwrites existing AGENTS.md without warning | High | Check before write, prompt |
+| 4 | Coverage paths assume conventional layouts | High | `configure` command / agent discovery |
+| 5 | Elixir umbrella structure not recognized | Medium | `configure` command / agent discovery |
+| 6 | No warning about existing `contracts/` directory | Low | One-line warning |
+| 7 | Re-running init silently overwrites config | Medium | Detect existing config, prompt |
+| 8 | Branch protection prompt fires after writes | Low | Reorder or separate command |
