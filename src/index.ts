@@ -6,6 +6,7 @@ import { installCommand } from "./commands/install";
 import { vaultGet, vaultSet, vaultList, vaultExport, vaultInit } from "./commands/vault";
 import { contractList, contractCheck, contractNew } from "./commands/contract";
 import { specNew, specList, specStatus } from "./commands/spec";
+import { configureCommand } from "./commands/configure";
 
 const program = new Command();
 
@@ -58,5 +59,10 @@ const specCmd = program.command("spec").description("Manage RFCs");
 specCmd.command("new").description("Scaffold a new RFC").action(specNew);
 specCmd.command("list").description("List all RFCs with status").action(specList);
 specCmd.command("status <id>").description("Show RFC lifecycle status").action(specStatus);
+
+program
+  .command("configure")
+  .description("Print agent prompt for project-specific configuration")
+  .action(configureCommand);
 
 program.parse();

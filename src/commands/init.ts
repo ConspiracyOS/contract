@@ -1,4 +1,6 @@
 // src/commands/init.ts
+import { existsSync } from "fs";
+import { spawnSync } from "child_process";
 import { input, select, checkbox, confirm } from "@inquirer/prompts";
 import { detectStacks } from "../init/detector";
 import { writeAgentConfig, appendGitignore } from "../init/config";
@@ -6,16 +8,40 @@ import { writeGithubFiles, writeAgentInstructions, configureBranchProtection } f
 import { installGitHooks } from "../init/hooks";
 import type { Stack } from "../init/detector";
 
+function projectNameFromGit(cwd: string): string | undefined {
+  const result = spawnSync("git", ["remote", "get-url", "origin"], { cwd, encoding: "utf8" });
+  if (result.status !== 0) return undefined;
+  return result.stdout.trim().match(/\/([^/]+?)(?:\.git)?$/)?.[1];
+}
+
 export async function initCommand(): Promise<void> {
   const cwd = process.cwd();
+
+  if (existsSync(`${cwd}/.agent/config.yaml`)) {
+    const overwrite = await confirm({
+      message: "agent-config is already initialised here. Re-run and overwrite?",
+      default: false,
+    });
+    if (!overwrite) {
+      console.log("Aborted. Edit .agent/config.yaml directly or run: agent-config configure\n");
+      return;
+    }
+  }
+
   const detectedStacks = await detectStacks(cwd);
 
   console.log("\nagent-config init\n");
   if (detectedStacks.length) {
     console.log(`Detected stacks: ${detectedStacks.join(", ")}\n`);
+  } else {
+    console.log("No stacks auto-detected. Select manually, or run `agent-config configure` after init.\n");
   }
 
-  const projectName = await input({ message: "Project name:", default: cwd.split("/").pop() });
+  if (existsSync(`${cwd}/contracts`)) {
+    console.log("Note: found contracts/ — agent-config uses .agent/contracts/ for YAML contracts (separate).\n");
+  }
+
+  const projectName = await input({ message: "Project name:", default: projectNameFromGit(cwd) ?? cwd.split("/").pop() });
   const githubOrg = await input({ message: "GitHub org/user:" });
   const githubRepo = await input({ message: "GitHub repo name:", default: projectName });
 
@@ -54,18 +80,26 @@ export async function initCommand(): Promise<void> {
     },
   };
 
-  console.log("\nInstalling...\n");
-
-  writeAgentConfig(cwd, config);
-  appendGitignore(cwd);
-  writeGithubFiles(cwd, config);
-  writeAgentInstructions(cwd, config);
-  installGitHooks(cwd);
+  let overwriteAgentsMd = true;
+  if (existsSync(`${cwd}/AGENTS.md`)) {
+    overwriteAgentsMd = await confirm({
+      message: "AGENTS.md already exists — overwrite?",
+      default: false,
+    });
+  }
 
   const configureBP = await confirm({
     message: `Configure branch protection on ${githubOrg}/${githubRepo}? (requires gh auth)`,
     default: true,
   });
+
+  console.log("\nInstalling...\n");
+
+  writeAgentConfig(cwd, config);
+  appendGitignore(cwd);
+  writeGithubFiles(cwd, config);
+  writeAgentInstructions(cwd, config, overwriteAgentsMd);
+  installGitHooks(cwd);
 
   if (configureBP) {
     await configureBranchProtection(githubOrg!, githubRepo!);
@@ -79,6 +113,8 @@ export async function initCommand(): Promise<void> {
 
   console.log("Done. Next steps:");
   console.log("  1. Review AGENTS.md and customise the review checklist");
-  console.log("  2. Author your first contract in .agent/contracts/");
-  console.log("  3. Run: agent-config audit\n");
+  console.log("  2. Update coverage_paths in .agent/config.yaml to match your project layout");
+  console.log("     (or run: agent-config configure)");
+  console.log("  3. Author your first contract in .agent/contracts/");
+  console.log("  4. Run: agent-config audit\n");
 }

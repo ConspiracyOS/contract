@@ -24,10 +24,14 @@ export function writeGithubFiles(projectRoot: string, config: ProjectConfig): vo
   writeFileSync(`${gh}/ISSUE_TEMPLATE/bug.md`, generateBugIssueTemplate());
 }
 
-export function writeAgentInstructions(projectRoot: string, config: ProjectConfig): void {
-  const agentsMd = generateAgentsMd(config);
-  writeFileSync(`${projectRoot}/AGENTS.md`, agentsMd);
-
+export function writeAgentInstructions(
+  projectRoot: string,
+  config: ProjectConfig,
+  overwriteAgentsMd = true
+): void {
+  if (overwriteAgentsMd) {
+    writeFileSync(`${projectRoot}/AGENTS.md`, generateAgentsMd(config));
+  }
   const claudeMd = `${projectRoot}/CLAUDE.md`;
   if (!existsSync(claudeMd)) {
     symlinkSync("AGENTS.md", claudeMd);
