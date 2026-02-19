@@ -45,7 +45,7 @@ jobs:
   audit:
     runs-on: ${runner}
     steps:
-      - ${checkout}
+      ${checkout}
       - name: Install agent-config
         run: |
           curl -fsSL https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-linux-x64 -o /usr/local/bin/agent-config
@@ -70,7 +70,7 @@ jobs:
   behavioral-contracts:
     runs-on: ${runner}
     steps:
-      - ${checkout}
+      ${checkout}
       - name: Install agent-config
         run: |
           curl -fsSL https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-linux-x64 -o /usr/local/bin/agent-config
