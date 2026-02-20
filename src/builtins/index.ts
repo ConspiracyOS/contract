@@ -10,11 +10,13 @@ import { CT_CONTRACTS } from "../stacks/containers";
 import { SH_CONTRACTS } from "../stacks/shell";
 import { GO_CONTRACTS } from "../stacks/go";
 import { JS_CONTRACTS } from "../stacks/javascript";
+import { FD_CONTRACTS } from "./opinionated/frontend-design";
 import { parseContract } from "../engine/parser";
 import type { Contract } from "../engine/types";
 import type { Stack } from "../init/detector";
+import type { OpinionatedPreset } from "../init/config";
 
-export function loadBuiltinContracts(stacks: Stack[] = []): Contract[] {
+export function loadBuiltinContracts(stacks: Stack[] = [], opinionatedPresets: OpinionatedPreset[] = []): Contract[] {
   const yamls = [...PROC_CONTRACTS];
   if (stacks.includes("typescript")) yamls.push(...TS_CONTRACTS);
   if (stacks.includes("python")) yamls.push(...PY_CONTRACTS);
@@ -26,5 +28,6 @@ export function loadBuiltinContracts(stacks: Stack[] = []): Contract[] {
   if (stacks.includes("shell")) yamls.push(...SH_CONTRACTS);
   if (stacks.includes("go")) yamls.push(...GO_CONTRACTS);
   if (stacks.includes("javascript")) yamls.push(...JS_CONTRACTS);
+  if (opinionatedPresets.includes("frontend-design")) yamls.push(...FD_CONTRACTS);
   return yamls.map(y => parseContract(y));
 }

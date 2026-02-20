@@ -5,7 +5,10 @@ import type { Stack } from "../detector";
 const STACK_CONVENTIONS: Record<Stack, string> = {
   typescript: `- Package manager: Bun. Run \`bun install\`, not npm or yarn.
 - TypeScript strict mode enforced. No \`as any\` without \`@contract\` annotation.
-- Frontend: Astro + shadcn/ui. No custom Tailwind classes — use shadcn component variants.`,
+- Frontend: prefer existing component primitives over ad-hoc design patterns.
+- If you enable opinionated preset \`frontend-design\`, follow Tailwind + shadcn/ui + CSS variable theming.`,
+  javascript: `- Keep JS modules small and explicit; avoid framework-implicit magic.
+- Use lint + test scripts from package.json when present (\`npm run lint\`, \`npm test\`).`,
   python: `- Package manager: uv. Use \`uv run\` to execute, \`uv add\` to install.
 - Virtual environment at \`.venv/\` in project root. Never activate a system venv.
 - All public functions must have type annotations (\`mypy --strict\` enforced).`,
@@ -21,6 +24,10 @@ const STACK_CONVENTIONS: Record<Stack, string> = {
   containers: `- Services must not bind ports to host. Use Docker networks.
 - Inter-service references use service names (e.g. \`postgres:5432\`), never \`localhost\`.
 - No \`latest\` image tags — pin versions.`,
+  shell: `- Scripts require \`#!/usr/bin/env bash\` and \`set -euo pipefail\`.
+- Keep scripts deterministic and idempotent where possible.`,
+  go: `- Keep code gofmt-clean and run \`go test ./...\` before merge.
+- Use \`go vet\` findings as warnings that should usually be fixed, not ignored.`,
 };
 
 export function generateAgentsMd(config: ProjectConfig): string {

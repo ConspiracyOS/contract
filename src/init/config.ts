@@ -3,10 +3,15 @@ import yaml from "js-yaml";
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from "fs";
 import type { Stack } from "./detector";
 
+export type OpinionatedPreset = "frontend-design";
+
 export interface ProjectConfig {
   project: string;
   github: { org: string; repo: string; runner: "github-hosted" | "self-hosted" };
   stack: Stack[];
+  opinionated?: {
+    presets?: OpinionatedPreset[];
+  };
   submodules?: boolean;
   contracts: {
     audit_on: string[];

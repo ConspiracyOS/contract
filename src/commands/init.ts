@@ -7,6 +7,7 @@ import { writeAgentConfig, appendGitignore } from "../init/config";
 import { writeGithubFiles, writeAgentInstructions, configureBranchProtection } from "../init/github";
 import { installGitHooks } from "../init/hooks";
 import type { Stack } from "../init/detector";
+import type { OpinionatedPreset } from "../init/config";
 
 function projectNameFromGit(cwd: string): string | undefined {
   const result = spawnSync("git", ["remote", "get-url", "origin"], { cwd, encoding: "utf8" });
@@ -53,7 +54,7 @@ export async function initCommand(): Promise<void> {
     ],
   }) as "github-hosted" | "self-hosted";
 
-  const availableStacks: Stack[] = ["typescript", "python", "elixir", "rust", "rails", "mobile", "containers"];
+  const availableStacks: Stack[] = ["typescript", "javascript", "python", "elixir", "rust", "rails", "mobile", "containers", "shell", "go"];
   const stacks = await checkbox({
     message: "Stacks (space to select):",
     choices: availableStacks.map(s => ({
@@ -62,6 +63,17 @@ export async function initCommand(): Promise<void> {
       checked: detectedStacks.includes(s),
     })),
   }) as Stack[];
+
+  const opinionatedPresets = await checkbox({
+    message: "Optional opinionated presets:",
+    choices: [
+      {
+        name: "frontend-design (Tailwind + shadcn/ui + themed CSS variables)",
+        value: "frontend-design",
+        checked: false,
+      },
+    ],
+  }) as OpinionatedPreset[];
 
   const requireCoverage = await confirm({
     message: "Require contract coverage on new files? (recommended)",
@@ -74,6 +86,7 @@ export async function initCommand(): Promise<void> {
     project: projectName!,
     github: { org: githubOrg!, repo: githubRepo!, runner },
     stack: stacks,
+    ...(opinionatedPresets.length > 0 ? { opinionated: { presets: opinionatedPresets } } : {}),
     ...(hasSubmodules ? { submodules: true } : {}),
     contracts: {
       audit_on: ["commit", "pr"],

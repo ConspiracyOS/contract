@@ -8,7 +8,7 @@ import { parseContractFile } from "../engine/parser";
 import { runAudit } from "../engine/audit";
 import { printAuditResult } from "../engine/reporter";
 import type { Contract, ContractTrigger } from "../engine/types";
-import type { ProjectConfig } from "../init/config";
+import type { OpinionatedPreset, ProjectConfig } from "../init/config";
 import type { Stack } from "../init/detector";
 
 function findProjectRoot(): string {
@@ -22,12 +22,14 @@ function findProjectRoot(): string {
 
 async function loadAllContracts(projectRoot: string): Promise<Contract[]> {
   let stacks: Stack[] = [];
+  let opinionatedPresets: OpinionatedPreset[] = [];
   const configPath = `${projectRoot}/.agent/config.yaml`;
   if (existsSync(configPath)) {
     const cfg = yaml.load(readFileSync(configPath, "utf8")) as ProjectConfig;
     stacks = cfg.stack ?? [];
+    opinionatedPresets = cfg.opinionated?.presets ?? [];
   }
-  const builtins = loadBuiltinContracts(stacks);
+  const builtins = loadBuiltinContracts(stacks, opinionatedPresets);
 
   const projectContracts: Contract[] = [];
   const contractDir = `${projectRoot}/.agent/contracts`;
