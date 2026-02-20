@@ -7,6 +7,7 @@ import { checkYamlKey, checkJsonKey, checkTomlKey } from "./modules/config";
 import { checkEnvVar, checkNoEnvVar, checkCommandAvailable } from "./modules/env";
 import { runCommandCheck } from "./modules/command";
 import { runScriptCheck } from "./modules/script";
+import { runAstGrepCheck } from "./modules/ast-grep";
 import { findExemption } from "./modules/exemption";
 import { GLOBAL_SCOPE_SENTINEL } from "./scope";
 import { existsSync } from "fs";
@@ -87,6 +88,11 @@ async function runSingleCheck(
     const timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed * 1000 : 60_000;
     const result = await runScriptCheck(`${projectRoot}/${m.path}`, projectRoot, timeoutMs);
     return { pass: result.pass, reason: result.message };
+  }
+
+  if (c["ast_grep"]) {
+    const m = c["ast_grep"] as { rule: string };
+    return await runAstGrepCheck(m, file, projectRoot);
   }
 
   return { pass: false, reason: `unknown check module in: ${Object.keys(c).join(", ")}` };

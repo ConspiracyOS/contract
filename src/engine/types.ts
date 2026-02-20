@@ -54,6 +54,9 @@ export interface CommandCheck {
 export interface ScriptCheck {
   script: { path: string; timeout?: string };
 }
+export interface AstGrepCheck {
+  ast_grep: { rule: string };
+}
 
 export type CheckModule =
   | RegexInFileCheck
@@ -67,7 +70,8 @@ export type CheckModule =
   | NoEnvVarCheck
   | CommandAvailableCheck
   | CommandCheck
-  | ScriptCheck;
+  | ScriptCheck
+  | AstGrepCheck;
 
 export interface ContractCheck {
   name: string;
