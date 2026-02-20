@@ -1,5 +1,4 @@
 // src/engine/audit.ts
-import { Glob } from "bun";
 import type { AuditResult, Contract, ContractTrigger } from "./types";
 import { resolveScope } from "./scope";
 import { runCheck, evaluateSkipIf } from "./runner";
@@ -52,19 +51,17 @@ async function checkCoverage(
   projectRoot: string
 ): Promise<AuditResult["results"]> {
   const results: AuditResult["results"] = [];
-  for (const pattern of patterns) {
-    const glob = new Glob(pattern);
-    for await (const file of glob.scan({ cwd: projectRoot, absolute: true })) {
-      if (!evaluatedFiles.has(file)) {
-        results.push({
-          contractId: "C-PROC04",
-          contractDescription: "All source files must be in at least one contract scope",
-          checkName: "file has contract coverage",
-          status: "warn",
-          message: "no contract evaluates this file",
-          file,
-        });
-      }
+  const files = await resolveScope({ paths: patterns }, projectRoot);
+  for (const file of files) {
+    if (!evaluatedFiles.has(file)) {
+      results.push({
+        contractId: "C-PROC04",
+        contractDescription: "All source files must be in at least one contract scope",
+        checkName: "file has contract coverage",
+        status: "warn",
+        message: "no contract evaluates this file",
+        file,
+      });
     }
   }
   return results;
