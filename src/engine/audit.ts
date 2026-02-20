@@ -97,6 +97,11 @@ export async function runAudit(
     allResults.push(...coverageResults);
   }
 
+  const totalFindings = allResults.reduce(
+    (sum, r) => sum + (r.findings?.length ?? 0),
+    0
+  );
+
   return {
     results: allResults,
     passed: allResults.filter(r => r.status === "pass").length,
@@ -104,5 +109,6 @@ export async function runAudit(
     exempt: allResults.filter(r => r.status === "exempt").length,
     skipped: allResults.filter(r => r.status === "skip").length,
     warned: allResults.filter(r => r.status === "warn").length,
+    totalFindings,
   };
 }
