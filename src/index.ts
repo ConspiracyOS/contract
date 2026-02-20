@@ -13,7 +13,7 @@ const program = new Command();
 program
   .name("agent-config")
   .description("Enforce methodology on AI agent projects")
-  .version("0.3.0");
+  .version("0.4.0");
 
 program
   .command("audit")
