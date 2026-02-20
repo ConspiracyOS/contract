@@ -91,6 +91,17 @@ export interface Contract {
 
 export type CheckStatus = "pass" | "fail" | "exempt" | "skip" | "warn";
 
+export interface Finding {
+  ruleId: string;
+  message: string;
+  severity: "error" | "warning" | "info";
+  file?: string;
+  line?: number;
+  column?: number;
+  endLine?: number;
+  endColumn?: number;
+}
+
 export interface CheckResult {
   contractId: string;
   contractDescription: string;
@@ -98,6 +109,7 @@ export interface CheckResult {
   status: CheckStatus;
   message?: string;
   file?: string;
+  findings?: Finding[];
 }
 
 export interface AuditResult {
@@ -107,4 +119,5 @@ export interface AuditResult {
   exempt: number;
   skipped: number;
   warned: number;
+  totalFindings?: number;
 }
