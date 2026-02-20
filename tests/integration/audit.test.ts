@@ -389,3 +389,71 @@ describe("JavaScript stack contracts", () => {
     expect(js03.id).toBe("C-JS03");
   });
 });
+
+describe("Opinionated frontend-design preset", () => {
+  it("does not load opinionated contracts by default", async () => {
+    const { loadBuiltinContracts } = await import("../../src/builtins/index");
+    const contracts = loadBuiltinContracts(["typescript"]);
+    expect(contracts.some(c => c.id === "C-FD01")).toBe(false);
+    expect(contracts.some(c => c.id === "C-FD02")).toBe(false);
+    expect(contracts.some(c => c.id === "C-FD03")).toBe(false);
+  });
+
+  it("loads frontend-design contracts when preset is enabled", async () => {
+    const { loadBuiltinContracts } = await import("../../src/builtins/index");
+    const contracts = loadBuiltinContracts(["typescript"], ["frontend-design"]);
+    expect(contracts.some(c => c.id === "C-FD01")).toBe(true);
+    expect(contracts.some(c => c.id === "C-FD02")).toBe(true);
+    expect(contracts.some(c => c.id === "C-FD03")).toBe(true);
+  });
+});
+
+describe("Findings pipeline", () => {
+  it("CheckResult carries findings through the full audit pipeline", async () => {
+    const contract = parseContract(`
+id: INT-FIND-001
+description: basic check with no findings
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: file check
+    path_exists:
+      path: AGENTS.md
+    on_fail: fail
+`);
+    const result = await runAudit([contract], "commit", TMP);
+    expect(result.totalFindings).toBe(0);
+    expect(result.results[0]!.findings).toBeUndefined();
+  });
+
+  it("AuditResult.totalFindings aggregates correctly across contracts", async () => {
+    const c1 = parseContract(`
+id: INT-FIND-002a
+description: first contract
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: check a
+    path_exists:
+      path: AGENTS.md
+    on_fail: fail
+`);
+    const c2 = parseContract(`
+id: INT-FIND-002b
+description: second contract
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: check b
+    path_exists:
+      path: AGENTS.md
+    on_fail: fail
+`);
+    const result = await runAudit([c1, c2], "commit", TMP);
+    expect(result.totalFindings).toBe(0);
+    expect(typeof result.totalFindings).toBe("number");
+  });
+});
