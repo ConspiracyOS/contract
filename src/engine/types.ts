@@ -102,6 +102,10 @@ export interface Finding {
   endColumn?: number;
 }
 
+export type ModuleResult =
+  | { pass: boolean; reason?: string }
+  | { pass: boolean; reason?: string; findings: Finding[] };
+
 export interface CheckResult {
   contractId: string;
   contractDescription: string;

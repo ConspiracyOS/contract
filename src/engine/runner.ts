@@ -1,5 +1,5 @@
 // src/engine/runner.ts
-import type { Check, CheckResult, Contract, SkipIf } from "./types";
+import type { Check, CheckResult, Contract, Finding, ModuleResult, SkipIf } from "./types";
 import { spawnSync } from "child_process";
 import { checkRegexInFile, checkNoRegexInFile } from "./modules/regex";
 import { checkPathExists, checkPathNotExists } from "./modules/filesystem";
@@ -27,7 +27,7 @@ async function runSingleCheck(
   check: Check,
   file: string,
   projectRoot: string
-): Promise<{ pass: boolean; reason?: string }> {
+): Promise<ModuleResult> {
   const c = check as Record<string, unknown>;
 
   if (c["regex_in_file"]) {
@@ -108,7 +108,9 @@ export async function runCheck(
     };
   }
 
-  const { pass, reason } = await runSingleCheck(check, file, projectRoot);
+  const result = await runSingleCheck(check, file, projectRoot);
+  const { pass, reason } = result;
+  const findings = "findings" in result ? result.findings : undefined;
   const onFail = check.on_fail ?? "fail";
 
   if (pass) {
@@ -118,6 +120,7 @@ export async function runCheck(
       checkName: check.name,
       status: "pass",
       file,
+      findings,
     };
   }
 
@@ -129,6 +132,7 @@ export async function runCheck(
       status: "warn",
       message: reason,
       file,
+      findings,
     };
   }
 
@@ -153,5 +157,6 @@ export async function runCheck(
     status: "fail",
     message: reason ?? "check did not pass",
     file,
+    findings,
   };
 }
