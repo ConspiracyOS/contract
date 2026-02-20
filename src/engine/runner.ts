@@ -6,7 +6,7 @@ import { checkPathExists, checkPathNotExists } from "./modules/filesystem";
 import { checkYamlKey, checkJsonKey, checkTomlKey } from "./modules/config";
 import { checkEnvVar, checkNoEnvVar, checkCommandAvailable } from "./modules/env";
 import { runCommandCheck } from "./modules/command";
-import { runScriptCheck } from "./modules/script";
+import { runScriptCheck, runInlineScriptCheck } from "./modules/script";
 import { runAstGrepCheck } from "./modules/ast-grep";
 import { runDepCruiserCheck } from "./modules/dependency-cruiser";
 import { runImportLinterCheck } from "./modules/import-linter";
@@ -85,7 +85,13 @@ async function runSingleCheck(
     return { pass: result.pass, reason: result.reason };
   }
   if (c["script"]) {
-    const m = c["script"] as { path: string; timeout?: string };
+    const s = c["script"];
+    if (typeof s === "string") {
+      // Inline script content
+      const result = await runInlineScriptCheck(s, projectRoot);
+      return { pass: result.pass, reason: result.message };
+    }
+    const m = s as { path: string; timeout?: string };
     const parsed = m.timeout ? parseInt(m.timeout, 10) : NaN;
     const timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed * 1000 : 60_000;
     const result = await runScriptCheck(`${projectRoot}/${m.path}`, projectRoot, timeoutMs);

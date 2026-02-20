@@ -52,7 +52,7 @@ export interface CommandCheck {
   command: { run: string; exit_code?: number; output_matches?: string };
 }
 export interface ScriptCheck {
-  script: { path: string; timeout?: string };
+  script: string | { path: string; timeout?: string };
 }
 export interface AstGrepCheck {
   ast_grep: { rule: string };
