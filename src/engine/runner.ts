@@ -9,6 +9,7 @@ import { runCommandCheck } from "./modules/command";
 import { runScriptCheck } from "./modules/script";
 import { runAstGrepCheck } from "./modules/ast-grep";
 import { runDepCruiserCheck } from "./modules/dependency-cruiser";
+import { runImportLinterCheck } from "./modules/import-linter";
 import { findExemption } from "./modules/exemption";
 import { GLOBAL_SCOPE_SENTINEL } from "./scope";
 import { existsSync } from "fs";
@@ -99,6 +100,11 @@ async function runSingleCheck(
   if (c["dependency_cruiser"]) {
     const m = c["dependency_cruiser"] as { config: string };
     return await runDepCruiserCheck(m, file, projectRoot);
+  }
+
+  if (c["import_linter"]) {
+    const m = c["import_linter"] as { config?: string };
+    return await runImportLinterCheck(m, projectRoot);
   }
 
   return { pass: false, reason: `unknown check module in: ${Object.keys(c).join(", ")}` };

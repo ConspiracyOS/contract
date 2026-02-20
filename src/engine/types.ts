@@ -60,6 +60,9 @@ export interface AstGrepCheck {
 export interface DependencyCruiserCheck {
   dependency_cruiser: { config: string };
 }
+export interface ImportLinterCheck {
+  import_linter: { config?: string };
+}
 
 export type CheckModule =
   | RegexInFileCheck
@@ -75,7 +78,8 @@ export type CheckModule =
   | CommandCheck
   | ScriptCheck
   | AstGrepCheck
-  | DependencyCruiserCheck;
+  | DependencyCruiserCheck
+  | ImportLinterCheck;
 
 export interface ContractCheck {
   name: string;
