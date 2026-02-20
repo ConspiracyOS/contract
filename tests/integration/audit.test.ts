@@ -457,3 +457,694 @@ checks:
     expect(typeof result.totalFindings).toBe("number");
   });
 });
+
+describe("ast_grep integration", () => {
+  const originalSpawnSync = Bun.spawnSync;
+
+  it("parses ast_grep contract YAML and flows through the audit pipeline", async () => {
+    const contract = parseContract(`
+id: INT-AST-001
+description: no console.log via ast-grep
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: no console.log
+    ast_grep:
+      rule: rules/no-console.yml
+    on_fail: warn
+`);
+
+    expect(contract.id).toBe("INT-AST-001");
+    expect(contract.checks[0]!.name).toBe("no console.log");
+    expect((contract.checks[0] as any).ast_grep).toEqual({ rule: "rules/no-console.yml" });
+  });
+
+  it("produces warn result with findings when ast-grep returns matches", async () => {
+    const matches = [
+      {
+        ruleId: "no-console",
+        message: "Remove console.log",
+        severity: "error",
+        file: "src/app.ts",
+        range: {
+          start: { line: 5, column: 0 },
+          end: { line: 5, column: 20 },
+        },
+      },
+      {
+        ruleId: "no-console",
+        message: "Remove console.log",
+        severity: "warning",
+        file: "src/utils.ts",
+        range: {
+          start: { line: 12, column: 4 },
+          end: { line: 12, column: 24 },
+        },
+      },
+    ];
+
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: 1,
+      stdout: new TextEncoder().encode(JSON.stringify(matches)),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-AST-002
+description: no console.log via ast-grep
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: no console.log
+    ast_grep:
+      rule: rules/no-console.yml
+    on_fail: warn
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.warned).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.totalFindings).toBe(2);
+
+      const checkResult = result.results[0]!;
+      expect(checkResult.status).toBe("warn");
+      expect(checkResult.findings).toBeDefined();
+      expect(checkResult.findings!).toHaveLength(2);
+      expect(checkResult.findings![0].ruleId).toBe("no-console");
+      expect(checkResult.findings![0].line).toBe(6); // 0-based -> 1-based
+      expect(checkResult.findings![1].line).toBe(13);
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("produces fail result with findings when on_fail is fail", async () => {
+    const matches = [
+      {
+        ruleId: "no-var",
+        message: "Use let or const",
+        severity: "error",
+        file: "src/main.ts",
+        range: {
+          start: { line: 0, column: 0 },
+          end: { line: 0, column: 10 },
+        },
+      },
+    ];
+
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: 1,
+      stdout: new TextEncoder().encode(JSON.stringify(matches)),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-AST-003
+description: no var via ast-grep
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: no var declarations
+    ast_grep:
+      rule: rules/no-var.yml
+    on_fail: fail
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.failed).toBe(1);
+      expect(result.totalFindings).toBe(1);
+      expect(result.results[0]!.status).toBe("fail");
+      expect(result.results[0]!.findings![0].ruleId).toBe("no-var");
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("passes when ast-grep returns no matches", async () => {
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: 0,
+      stdout: new TextEncoder().encode("[]"),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-AST-004
+description: clean codebase
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: no issues
+    ast_grep:
+      rule: rules/check.yml
+    on_fail: fail
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.passed).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.totalFindings).toBe(0);
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("fails gracefully when sg tool is not found", async () => {
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: null,
+      stdout: new Uint8Array(0),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-AST-005
+description: tool not found test
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: sg not installed
+    ast_grep:
+      rule: rules/check.yml
+    on_fail: fail
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.failed).toBe(1);
+      expect(result.results[0]!.status).toBe("fail");
+      expect(result.results[0]!.message).toMatch(/sg/);
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+});
+
+describe("dependency_cruiser integration", () => {
+  const originalSpawnSync = Bun.spawnSync;
+
+  it("parses dependency_cruiser contract YAML and flows through the audit pipeline", async () => {
+    const contract = parseContract(`
+id: INT-DC-001
+description: no circular dependencies
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: no circular deps
+    dependency_cruiser:
+      config: .dependency-cruiser.cjs
+    on_fail: warn
+`);
+
+    expect(contract.id).toBe("INT-DC-001");
+    expect(contract.checks[0]!.name).toBe("no circular deps");
+    expect((contract.checks[0] as any).dependency_cruiser).toEqual({ config: ".dependency-cruiser.cjs" });
+  });
+
+  it("produces warn result with findings when violations are found", async () => {
+    const dcOutput = JSON.stringify({
+      summary: {
+        violations: [
+          {
+            type: "dependency",
+            from: "src/app.ts",
+            to: "src/utils.ts",
+            rule: { name: "no-circular", severity: "warn" },
+            cycle: ["src/app.ts", "src/utils.ts", "src/app.ts"],
+          },
+          {
+            type: "dependency",
+            from: "src/index.ts",
+            to: "src/forbidden.ts",
+            rule: { name: "not-to-test", severity: "error" },
+          },
+        ],
+      },
+    });
+
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: 0,
+      stdout: new TextEncoder().encode(dcOutput),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-DC-002
+description: dependency rules
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: dep cruiser rules
+    dependency_cruiser:
+      config: .dependency-cruiser.cjs
+    on_fail: warn
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.warned).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.totalFindings).toBe(2);
+
+      const checkResult = result.results[0]!;
+      expect(checkResult.status).toBe("warn");
+      expect(checkResult.findings).toBeDefined();
+      expect(checkResult.findings!).toHaveLength(2);
+      expect(checkResult.findings![0].ruleId).toBe("no-circular");
+      expect(checkResult.findings![0].severity).toBe("warning");
+      expect(checkResult.findings![1].ruleId).toBe("not-to-test");
+      expect(checkResult.findings![1].severity).toBe("error");
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("produces fail result with findings when on_fail is fail", async () => {
+    const dcOutput = JSON.stringify({
+      summary: {
+        violations: [
+          {
+            type: "dependency",
+            from: "src/core.ts",
+            to: "src/test-helper.ts",
+            rule: { name: "not-to-test", severity: "error" },
+          },
+        ],
+      },
+    });
+
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: 0,
+      stdout: new TextEncoder().encode(dcOutput),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-DC-003
+description: strict dependency rules
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: no test imports in prod
+    dependency_cruiser:
+      config: .dependency-cruiser.cjs
+    on_fail: fail
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.failed).toBe(1);
+      expect(result.totalFindings).toBe(1);
+      expect(result.results[0]!.status).toBe("fail");
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("passes when no violations are found", async () => {
+    const dcOutput = JSON.stringify({ summary: { violations: [] } });
+
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: 0,
+      stdout: new TextEncoder().encode(dcOutput),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-DC-004
+description: clean dependencies
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: all clean
+    dependency_cruiser:
+      config: .dependency-cruiser.cjs
+    on_fail: fail
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.passed).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.totalFindings).toBe(0);
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("fails gracefully when depcruise tool is not found", async () => {
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: null,
+      stdout: new Uint8Array(0),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-DC-005
+description: tool not found test
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: depcruise not installed
+    dependency_cruiser:
+      config: .dependency-cruiser.cjs
+    on_fail: fail
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.failed).toBe(1);
+      expect(result.results[0]!.status).toBe("fail");
+      expect(result.results[0]!.message).toMatch(/depcruise|dependency-cruiser/);
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+});
+
+describe("import_linter integration", () => {
+  const originalSpawnSync = Bun.spawnSync;
+
+  it("parses import_linter contract YAML and flows through the audit pipeline", async () => {
+    const contract = parseContract(`
+id: INT-IL-001
+description: enforce import boundaries
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: import contracts
+    import_linter:
+      config: .importlinter
+    on_fail: warn
+`);
+
+    expect(contract.id).toBe("INT-IL-001");
+    expect(contract.checks[0]!.name).toBe("import contracts");
+    expect((contract.checks[0] as any).import_linter).toEqual({ config: ".importlinter" });
+  });
+
+  it("parses import_linter contract without config option", async () => {
+    const contract = parseContract(`
+id: INT-IL-001b
+description: enforce import boundaries (default config)
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: import contracts
+    import_linter: {}
+    on_fail: warn
+`);
+
+    expect(contract.id).toBe("INT-IL-001b");
+    expect((contract.checks[0] as any).import_linter).toEqual({});
+  });
+
+  it("produces warn result with findings when broken contracts are found", async () => {
+    const brokenOutput = `
+=============
+Import Linter
+=============
+
+---------
+Contracts
+---------
+
+Analyzed 42 files, 156 dependencies.
+
+  my_layered_contract KEPT
+  my_forbidden_contract BROKEN
+
+----------------
+Broken contracts
+----------------
+
+my_forbidden_contract
+---------------------
+
+mypackage.foo is not allowed to import mypackage.bar:
+
+  mypackage.foo:8: from mypackage import bar
+  mypackage.foo:16: from mypackage.bar import something
+`;
+
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: 1,
+      stdout: new TextEncoder().encode(brokenOutput),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-IL-002
+description: import boundaries
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: no forbidden imports
+    import_linter:
+      config: .importlinter
+    on_fail: warn
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.warned).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.totalFindings).toBe(2);
+
+      const checkResult = result.results[0]!;
+      expect(checkResult.status).toBe("warn");
+      expect(checkResult.findings).toBeDefined();
+      expect(checkResult.findings!).toHaveLength(2);
+      expect(checkResult.findings![0].ruleId).toBe("my_forbidden_contract");
+      expect(checkResult.findings![0].file).toBe("mypackage/foo.py");
+      expect(checkResult.findings![0].line).toBe(8);
+      expect(checkResult.findings![1].line).toBe(16);
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("produces fail result with findings when on_fail is fail", async () => {
+    const brokenOutput = `
+=============
+Import Linter
+=============
+
+----------------
+Broken contracts
+----------------
+
+api_boundary
+------------
+
+mypackage.api is not allowed to import mypackage.internals:
+
+  mypackage.api:10: from mypackage.internals import secret
+`;
+
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: 1,
+      stdout: new TextEncoder().encode(brokenOutput),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-IL-003
+description: strict import boundaries
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: strict imports
+    import_linter:
+      config: .importlinter
+    on_fail: fail
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.failed).toBe(1);
+      expect(result.totalFindings).toBe(1);
+      expect(result.results[0]!.status).toBe("fail");
+      expect(result.results[0]!.findings![0].ruleId).toBe("api_boundary");
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("passes when all contracts are kept", async () => {
+    const cleanOutput = `
+=============
+Import Linter
+=============
+
+---------
+Contracts
+---------
+
+Analyzed 42 files, 156 dependencies.
+
+  my_layered_contract KEPT
+  my_forbidden_contract KEPT
+
+---
+`;
+
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: 0,
+      stdout: new TextEncoder().encode(cleanOutput),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-IL-004
+description: clean imports
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: all kept
+    import_linter: {}
+    on_fail: fail
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.passed).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.totalFindings).toBe(0);
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("fails gracefully when lint-imports tool is not found", async () => {
+    (Bun as any).spawnSync = (_cmd: string[], _opts?: any) => ({
+      exitCode: null,
+      stdout: new Uint8Array(0),
+      stderr: new Uint8Array(0),
+    });
+
+    try {
+      const contract = parseContract(`
+id: INT-IL-005
+description: tool not found test
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: lint-imports not installed
+    import_linter: {}
+    on_fail: fail
+`);
+
+      const result = await runAudit([contract], "commit", TMP);
+      expect(result.failed).toBe(1);
+      expect(result.results[0]!.status).toBe("fail");
+      expect(result.results[0]!.message).toMatch(/lint-imports|import.linter/i);
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+
+  it("totalFindings aggregates findings across multiple analyzer contracts", async () => {
+    const astGrepMatches = JSON.stringify([
+      {
+        ruleId: "no-console",
+        message: "Remove console.log",
+        severity: "error",
+        file: "src/app.ts",
+        range: { start: { line: 5, column: 0 }, end: { line: 5, column: 20 } },
+      },
+    ]);
+
+    const dcOutput = JSON.stringify({
+      summary: {
+        violations: [
+          {
+            type: "dependency",
+            from: "src/a.ts",
+            to: "src/b.ts",
+            rule: { name: "no-circular", severity: "error" },
+          },
+          {
+            type: "dependency",
+            from: "src/c.ts",
+            to: "src/d.ts",
+            rule: { name: "not-to-test", severity: "error" },
+          },
+        ],
+      },
+    });
+
+    let callCount = 0;
+    (Bun as any).spawnSync = (cmd: string[], _opts?: any) => {
+      callCount++;
+      // First call is ast-grep (sg), second is dependency-cruiser (npx depcruise)
+      if (cmd[0] === "sg") {
+        return {
+          exitCode: 1,
+          stdout: new TextEncoder().encode(astGrepMatches),
+          stderr: new Uint8Array(0),
+        };
+      }
+      if (cmd[0] === "npx") {
+        return {
+          exitCode: 0,
+          stdout: new TextEncoder().encode(dcOutput),
+          stderr: new Uint8Array(0),
+        };
+      }
+      return { exitCode: null, stdout: new Uint8Array(0), stderr: new Uint8Array(0) };
+    };
+
+    try {
+      const astContract = parseContract(`
+id: INT-MULTI-AST
+description: ast-grep check
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: ast-grep findings
+    ast_grep:
+      rule: rules/check.yml
+    on_fail: warn
+`);
+
+      const dcContract = parseContract(`
+id: INT-MULTI-DC
+description: dep cruiser check
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: dep cruiser findings
+    dependency_cruiser:
+      config: .dependency-cruiser.cjs
+    on_fail: warn
+`);
+
+      const result = await runAudit([astContract, dcContract], "commit", TMP);
+      expect(result.totalFindings).toBe(3); // 1 from ast-grep + 2 from dep-cruiser
+      expect(result.warned).toBe(2);
+      expect(result.failed).toBe(0);
+    } finally {
+      (Bun as any).spawnSync = originalSpawnSync;
+    }
+  });
+});
