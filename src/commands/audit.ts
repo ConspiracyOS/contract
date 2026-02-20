@@ -7,7 +7,7 @@ import type { CoverageOptions } from "../engine/audit";
 import { printAuditResult } from "../engine/reporter";
 import { loadBuiltinContracts } from "../builtins/index";
 import type { Contract, ContractTrigger } from "../engine/types";
-import type { ProjectConfig } from "../init/config";
+import type { OpinionatedPreset, ProjectConfig } from "../init/config";
 import type { Stack } from "../init/detector";
 import { existsSync, readFileSync } from "fs";
 
@@ -39,18 +39,20 @@ async function loadProjectContracts(projectRoot: string): Promise<Contract[]> {
   return contracts;
 }
 
-export async function auditCommand(options: { trigger?: string; noBuiltins?: boolean }): Promise<void> {
+export async function auditCommand(options: { trigger?: string; noBuiltins?: boolean; verbose?: boolean }): Promise<void> {
   const trigger = (options.trigger ?? "commit") as ContractTrigger;
   const projectRoot = findProjectRoot(process.cwd());
 
   const projectContracts = await loadProjectContracts(projectRoot);
 
   let stacks: Stack[] = [];
+  let opinionatedPresets: OpinionatedPreset[] = [];
   let coverage: CoverageOptions | undefined;
   const configPath = `${projectRoot}/.agent/config.yaml`;
   if (existsSync(configPath)) {
     const cfg = yaml.load(readFileSync(configPath, "utf8")) as ProjectConfig;
     stacks = cfg.stack ?? [];
+    opinionatedPresets = cfg.opinionated?.presets ?? [];
     if (cfg.contracts?.require_coverage !== false) {
       coverage = {
         enabled: true,
@@ -59,7 +61,7 @@ export async function auditCommand(options: { trigger?: string; noBuiltins?: boo
     }
   }
 
-  const builtins = options.noBuiltins ? [] : loadBuiltinContracts(stacks);
+  const builtins = options.noBuiltins ? [] : loadBuiltinContracts(stacks, opinionatedPresets);
   const contracts = [...builtins, ...projectContracts];
 
   if (contracts.length === 0) {
@@ -68,7 +70,7 @@ export async function auditCommand(options: { trigger?: string; noBuiltins?: boo
   }
 
   const result = await runAudit(contracts, trigger, projectRoot, coverage);
-  printAuditResult(result);
+  printAuditResult(result, { verbose: options.verbose });
 
   if (result.failed > 0) process.exit(1);
 }

@@ -20,8 +20,13 @@ program
   .description("Run all applicable contracts")
   .option("--trigger <trigger>", "Trigger context: commit | pr | merge", "commit")
   .option("--no-builtins", "Skip built-in process contracts")
+  .option("--verbose", "Show individual findings for each contract")
   .action(async (options) => {
-    await auditCommand({ trigger: options.trigger, noBuiltins: !options.builtins });
+    await auditCommand({
+      trigger: options.trigger,
+      noBuiltins: !options.builtins,
+      verbose: options.verbose,
+    });
   });
 
 program
