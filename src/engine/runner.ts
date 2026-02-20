@@ -8,6 +8,7 @@ import { checkEnvVar, checkNoEnvVar, checkCommandAvailable } from "./modules/env
 import { runCommandCheck } from "./modules/command";
 import { runScriptCheck } from "./modules/script";
 import { runAstGrepCheck } from "./modules/ast-grep";
+import { runDepCruiserCheck } from "./modules/dependency-cruiser";
 import { findExemption } from "./modules/exemption";
 import { GLOBAL_SCOPE_SENTINEL } from "./scope";
 import { existsSync } from "fs";
@@ -93,6 +94,11 @@ async function runSingleCheck(
   if (c["ast_grep"]) {
     const m = c["ast_grep"] as { rule: string };
     return await runAstGrepCheck(m, file, projectRoot);
+  }
+
+  if (c["dependency_cruiser"]) {
+    const m = c["dependency_cruiser"] as { config: string };
+    return await runDepCruiserCheck(m, file, projectRoot);
   }
 
   return { pass: false, reason: `unknown check module in: ${Object.keys(c).join(", ")}` };

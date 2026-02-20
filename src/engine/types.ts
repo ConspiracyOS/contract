@@ -57,6 +57,9 @@ export interface ScriptCheck {
 export interface AstGrepCheck {
   ast_grep: { rule: string };
 }
+export interface DependencyCruiserCheck {
+  dependency_cruiser: { config: string };
+}
 
 export type CheckModule =
   | RegexInFileCheck
@@ -71,7 +74,8 @@ export type CheckModule =
   | CommandAvailableCheck
   | CommandCheck
   | ScriptCheck
-  | AstGrepCheck;
+  | AstGrepCheck
+  | DependencyCruiserCheck;
 
 export interface ContractCheck {
   name: string;
