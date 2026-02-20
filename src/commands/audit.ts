@@ -4,7 +4,7 @@ import yaml from "js-yaml";
 import { parseContractFile } from "../engine/parser";
 import { runAudit } from "../engine/audit";
 import type { CoverageOptions } from "../engine/audit";
-import { printAuditResult } from "../engine/reporter";
+import { printAuditResult, formatAuditResultJson } from "../engine/reporter";
 import { loadBuiltinContracts } from "../builtins/index";
 import type { Contract, ContractTrigger } from "../engine/types";
 import type { OpinionatedPreset, ProjectConfig } from "../init/config";
@@ -39,7 +39,12 @@ async function loadProjectContracts(projectRoot: string): Promise<Contract[]> {
   return contracts;
 }
 
-export async function auditCommand(options: { trigger?: string; noBuiltins?: boolean; verbose?: boolean }): Promise<void> {
+export async function auditCommand(options: {
+  trigger?: string;
+  noBuiltins?: boolean;
+  verbose?: boolean;
+  json?: boolean;
+}): Promise<void> {
   const trigger = (options.trigger ?? "commit") as ContractTrigger;
   const projectRoot = findProjectRoot(process.cwd());
 
@@ -70,7 +75,12 @@ export async function auditCommand(options: { trigger?: string; noBuiltins?: boo
   }
 
   const result = await runAudit(contracts, trigger, projectRoot, coverage);
-  printAuditResult(result, { verbose: options.verbose });
+
+  if (options.json) {
+    console.log(formatAuditResultJson(result));
+  } else {
+    printAuditResult(result, { verbose: options.verbose });
+  }
 
   if (result.failed > 0) process.exit(1);
 }

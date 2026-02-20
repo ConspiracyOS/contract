@@ -65,3 +65,7 @@ export function printAuditResult(result: AuditResult, options?: ReporterOptions)
     `\n=== ${passed} passed, ${failed} failed, ${exempt} exempt, ${skipped} skipped, ${warned} warned ===\n`
   );
 }
+
+export function formatAuditResultJson(result: AuditResult): string {
+  return JSON.stringify(result, null, 2);
+}

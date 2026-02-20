@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { printAuditResult } from "../../src/engine/reporter";
+import { printAuditResult, formatAuditResultJson } from "../../src/engine/reporter";
 import type { AuditResult } from "../../src/engine/types";
 
 // Capture console.log output
@@ -68,9 +68,30 @@ describe("printAuditResult — verbose mode", () => {
 
   it("does not show findings for contracts without them", () => {
     printAuditResult(resultWithFindings(), { verbose: true });
-    const joined = output.join("\n");
     // C-002 has no findings, should just show the one-liner
     const c002Lines = output.filter(l => l.includes("C-002"));
     expect(c002Lines).toHaveLength(1);
+  });
+});
+
+describe("formatAuditResultJson", () => {
+  it("returns valid JSON with all fields", () => {
+    const result = resultWithFindings();
+    const json = formatAuditResultJson(result);
+    const parsed = JSON.parse(json);
+    expect(parsed.results).toHaveLength(2);
+    expect(parsed.passed).toBe(1);
+    expect(parsed.failed).toBe(1);
+    expect(parsed.totalFindings).toBe(2);
+    expect(parsed.results[0].findings).toHaveLength(2);
+    expect(parsed.results[0].findings[0].ruleId).toBe("no-aws-keys");
+  });
+
+  it("omits findings key when not present", () => {
+    const result = resultWithFindings();
+    const json = formatAuditResultJson(result);
+    const parsed = JSON.parse(json);
+    // C-002 has no findings — key should be absent
+    expect(parsed.results[1].findings).toBeUndefined();
   });
 });
