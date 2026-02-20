@@ -11,7 +11,7 @@ interface ScriptResult {
 export async function runScriptCheck(
   scriptPath: string,
   cwd: string,
-  timeoutMs = 60_000
+  timeoutMs = 120_000
 ): Promise<ScriptResult> {
   const proc = Bun.spawnSync([scriptPath], {
     cwd,

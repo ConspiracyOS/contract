@@ -93,7 +93,7 @@ async function runSingleCheck(
     }
     const m = s as { path: string; timeout?: string };
     const parsed = m.timeout ? parseInt(m.timeout, 10) : NaN;
-    const timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed * 1000 : 60_000;
+    const timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed * 1000 : 120_000;
     const result = await runScriptCheck(`${projectRoot}/${m.path}`, projectRoot, timeoutMs);
     return { pass: result.pass, reason: result.message };
   }

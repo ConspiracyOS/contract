@@ -1,5 +1,5 @@
 // src/engine/audit.ts
-import type { AuditResult, Contract, ContractTrigger } from "./types";
+import type { AuditResult, Check, Contract, ContractTrigger } from "./types";
 import { resolveScope } from "./scope";
 import { runCheck, evaluateSkipIf } from "./runner";
 
@@ -36,8 +36,33 @@ export async function auditContract(
   const files = await resolveScope(contract.scope, projectRoot);
   const results = [];
 
+  // Checks that use script/command/env don't depend on the file parameter —
+  // they run in projectRoot and produce identical results regardless of which
+  // file triggered them. Run these once and reuse the result for all files.
+  const FILE_INDEPENDENT_MODULES = new Set([
+    "script", "command", "command_available",
+    "env_var", "no_env_var",
+    "path_exists", "path_not_exists",
+    "import_linter",
+  ]);
+
+  function isFileIndependent(check: Check): boolean {
+    const c = check as Record<string, unknown>;
+    return [...FILE_INDEPENDENT_MODULES].some(m => c[m] !== undefined);
+  }
+
+  const fileIndependentChecks = contract.checks.filter(isFileIndependent);
+  const fileSpecificChecks = contract.checks.filter(c => !isFileIndependent(c));
+
+  // Run file-independent checks once (use first file as context)
+  const representativeFile = files[0] ?? "__global__";
+  for (const check of fileIndependentChecks) {
+    results.push(await runCheck(contract, check, representativeFile, projectRoot));
+  }
+
+  // Run file-specific checks per file
   for (const file of files) {
-    for (const check of contract.checks) {
+    for (const check of fileSpecificChecks) {
       results.push(await runCheck(contract, check, file, projectRoot));
     }
   }
