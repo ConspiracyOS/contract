@@ -15,21 +15,32 @@ export async function runScriptCheck(
 ): Promise<ScriptResult> {
   const proc = Bun.spawnSync([scriptPath], {
     cwd,
+    stdout: "pipe",
     stderr: "pipe",
     timeout: timeoutMs,
   });
 
   const output = new TextDecoder().decode(proc.stdout).trim();
+  const stderr = new TextDecoder().decode(proc.stderr).trim();
+
+  // Timeout: exitCode is null when the process was killed
+  if (proc.exitCode === null) {
+    return {
+      pass: false,
+      message: output || stderr || `script timed out after ${timeoutMs / 1000}s`,
+    };
+  }
+
   return {
     pass: proc.exitCode === 0,
-    message: output || new TextDecoder().decode(proc.stderr).trim(),
+    message: output || stderr,
   };
 }
 
 export async function runInlineScriptCheck(
   scriptContent: string,
   cwd: string,
-  timeoutMs = 60_000
+  timeoutMs = 120_000
 ): Promise<ScriptResult> {
   const tmpDir = mkdtempSync(join(tmpdir(), "agent-config-script-"));
   const tmpScript = join(tmpDir, "check.sh");
