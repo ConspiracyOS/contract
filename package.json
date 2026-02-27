@@ -2,7 +2,12 @@
   "name": "agent-config",
   "module": "index.ts",
   "type": "module",
-  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ConspiracyOS/agent-config.git"
+  },
+  "homepage": "https://github.com/ConspiracyOS/agent-config",
   "scripts": {
     "start": "bun run src/index.ts",
     "test": "bun test",

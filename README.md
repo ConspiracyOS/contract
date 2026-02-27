@@ -4,22 +4,22 @@ Enforce AI agent methodology on software projects via a contract DSL. Audits you
 
 ## Installation
 
-Download the latest binary from [Releases](https://github.com/vegardkrogh/agent-config-cli/releases):
+Download the latest binary from [Releases](https://github.com/ConspiracyOS/agent-config/releases):
 
 ```bash
 # macOS (Apple Silicon)
-curl -L https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-macos-arm64 \
+curl -L https://github.com/ConspiracyOS/agent-config/releases/latest/download/agent-config-macos-arm64 \
   -o /usr/local/bin/agent-config && chmod +x /usr/local/bin/agent-config
 
 # Linux (x64)
-curl -L https://github.com/vegardkrogh/agent-config-cli/releases/latest/download/agent-config-linux-x64 \
+curl -L https://github.com/ConspiracyOS/agent-config/releases/latest/download/agent-config-linux-x64 \
   -o /usr/local/bin/agent-config && chmod +x /usr/local/bin/agent-config
 ```
 
 Or run from source (requires [Bun](https://bun.sh)):
 
 ```bash
-git clone git@github.com:vegardkrogh/agent-config-cli.git
+git clone git@github.com:ConspiracyOS/agent-config.git
 cd agent-config-cli
 bun install
 bun run src/index.ts

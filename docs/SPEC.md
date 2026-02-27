@@ -452,7 +452,7 @@ The guiding principle: blocking CI is expensive for agent throughput. Block only
 | Doc staleness check | Post-merge | No | Async |
 | Security scans | Post-merge | No | Async |
 
-Async jobs report via GitHub commit status on `main`. A separate lightweight agent (e.g. a Haiku-tier model) can be configured to watch for async failures and file issues automatically.
+Async jobs report via GitHub commit status on `main`. A separate lightweight agent can be configured to watch for async failures and file issues automatically.
 
 ---
 
@@ -620,9 +620,9 @@ Blocked by: agents running under the same GitHub user account as the human. Crea
 
 ### MCP tools and plugin overlap
 
-Claude Code CLI ships with plugin suggestions (context7, superpowers, feature-dev, github, typescript-lsp, etc.). Some of these overlap with what agent-config does (PR management, code review, feature workflow).
+AI coding tools often ship with plugins or MCP servers that overlap with what agent-config does (PR management, code review, feature workflow).
 
-Before installing agent-config into a project, audit which Claude Code plugins are active and document which agent-config features they replace or conflict with. Do not install competing patterns.
+Before installing agent-config into a project, audit which plugins or tools are active and document which agent-config features they replace or conflict with. Do not install competing patterns.
 
 ### Cross-document referencing
 

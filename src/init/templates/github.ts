@@ -50,7 +50,7 @@ jobs:
         env:
           GH_TOKEN: \${{ secrets.AGENT_CONFIG_TOKEN }}
         run: |
-          gh release download v0.2.0 --repo vegardkrogh/agent-config-cli --pattern agent-config-linux-x64 --output /usr/local/bin/agent-config
+          gh release download v0.2.0 --repo ConspiracyOS/agent-config --pattern agent-config-linux-x64 --output /usr/local/bin/agent-config
           chmod +x /usr/local/bin/agent-config
       - name: Run contract audit
         run: agent-config audit --trigger pr
@@ -77,7 +77,7 @@ jobs:
         env:
           GH_TOKEN: \${{ secrets.AGENT_CONFIG_TOKEN }}
         run: |
-          gh release download v0.2.0 --repo vegardkrogh/agent-config-cli --pattern agent-config-linux-x64 --output /usr/local/bin/agent-config
+          gh release download v0.2.0 --repo ConspiracyOS/agent-config --pattern agent-config-linux-x64 --output /usr/local/bin/agent-config
           chmod +x /usr/local/bin/agent-config
       - name: Run behavioral contracts
         run: agent-config audit --trigger merge
