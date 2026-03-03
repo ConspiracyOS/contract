@@ -1,0 +1,11 @@
+id: C-GO-001
+description: Go modules must not have replace directives pointing to local paths
+type: atomic
+trigger: pr
+scope:
+  paths: ["go.mod"]
+checks:
+  - name: no local replace directives
+    no_regex_in_file:
+      pattern: "replace .+ => \\.\\./"
+    on_fail: warn

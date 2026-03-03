@@ -1,0 +1,11 @@
+id: C-PROC05
+description: worktrees/ must be gitignored
+type: atomic
+trigger: commit
+scope:
+  paths: [".gitignore"]
+checks:
+  - name: worktrees in .gitignore
+    regex_in_file:
+      pattern: "^worktrees/"
+    on_fail: fail

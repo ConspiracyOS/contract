@@ -1,0 +1,11 @@
+id: C-TEST-002
+description: Schedule contract
+type: detective
+trigger: schedule
+scope: global
+checks:
+  - name: disk check
+    command:
+      run: "df /"
+      exit_code: 0
+    on_fail: escalate

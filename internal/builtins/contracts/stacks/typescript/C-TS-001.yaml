@@ -1,0 +1,11 @@
+id: C-TS-001
+description: TypeScript must use strict mode
+type: atomic
+trigger: commit
+scope:
+  paths: ["tsconfig.json", "tsconfig.*.json"]
+checks:
+  - name: strict mode enabled
+    regex_in_file:
+      pattern: '"strict":\s*true'
+    on_fail: warn

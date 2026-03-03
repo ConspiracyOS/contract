@@ -1,0 +1,13 @@
+id: C-SEC02
+description: Source must pass secrets scan (gitleaks or trufflehog)
+type: atomic
+trigger: pr
+scope: global
+checks:
+  - name: secrets scan
+    skip_if:
+      command_not_available: gitleaks
+    command:
+      run: "gitleaks detect --no-git --source . --exit-code 1 2>&1"
+      exit_code: 0
+    on_fail: warn

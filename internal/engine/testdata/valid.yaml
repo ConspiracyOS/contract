@@ -1,0 +1,11 @@
+id: C-TEST-001
+description: Test contract
+type: atomic
+trigger: commit
+scope: global
+checks:
+  - name: echo check
+    command:
+      run: "echo ok"
+      exit_code: 0
+    on_fail: fail

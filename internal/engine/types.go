@@ -1,0 +1,124 @@
+package engine
+
+import "github.com/ConspiracyOS/contracts/internal/types"
+
+// Re-export shared check-input types from internal/types.
+// This allows engine to import modules (which import types) without a cycle.
+type (
+	Result            = types.Result
+	CommandCheck      = types.CommandCheck
+	ScriptCheck       = types.ScriptCheck
+	RegexCheck        = types.RegexCheck
+	PathType          = types.PathType
+	PathCheck         = types.PathCheck
+	KeyCheck          = types.KeyCheck
+	EnvVarCheck       = types.EnvVarCheck
+	CommandAvailCheck = types.CommandAvailCheck
+	SkipIf            = types.SkipIf
+)
+
+// Re-export PathType constants.
+const (
+	PathTypeFile      = types.PathTypeFile
+	PathTypeDirectory = types.PathTypeDirectory
+)
+
+// ContractType is display-only metadata.
+type ContractType string
+
+const (
+	TypeAtomic    ContractType = "atomic"
+	TypeDetective ContractType = "detective"
+	TypeHolistic  ContractType = "holistic"
+)
+
+// Trigger determines when the contract is evaluated.
+// "schedule" is used by ConspiracyOS heartbeat; git triggers by host CLI.
+type Trigger string
+
+const (
+	TriggerCommit   Trigger = "commit"
+	TriggerPR       Trigger = "pr"
+	TriggerMerge    Trigger = "merge"
+	TriggerSchedule Trigger = "schedule"
+)
+
+// OnFail action string — evaluator maps to context-appropriate behaviour.
+type OnFail string
+
+const (
+	OnFailFail             OnFail = "fail"
+	OnFailWarn             OnFail = "warn"
+	OnFailRequireExemption OnFail = "require_exemption"
+	OnFailEscalate         OnFail = "escalate"    // ConspiracyOS: escalate to sysadmin
+	OnFailHaltAgents       OnFail = "halt_agents" // ConspiracyOS: halt all agents
+	OnFailAlert            OnFail = "alert"        // ConspiracyOS: alert
+)
+
+type Scope struct {
+	Global  bool
+	Paths   []string
+	Exclude []string
+}
+
+// Check is a single assertion within a contract.
+// Exactly one check module field should be set.
+type Check struct {
+	Name   string  `yaml:"name"`
+	OnFail OnFail  `yaml:"on_fail"`
+	SkipIf *SkipIf `yaml:"skip_if"`
+
+	// Check modules (exactly one should be set)
+	Command       *CommandCheck      `yaml:"command"`
+	Script        *ScriptCheck       `yaml:"script"`
+	RegexInFile   *RegexCheck        `yaml:"regex_in_file"`
+	NoRegexInFile *RegexCheck        `yaml:"no_regex_in_file"`
+	PathExists    *PathCheck         `yaml:"path_exists"`
+	PathNotExists *PathCheck         `yaml:"path_not_exists"`
+	YAMLKey       *KeyCheck          `yaml:"yaml_key"`
+	JSONKey       *KeyCheck          `yaml:"json_key"`
+	TOMLKey       *KeyCheck          `yaml:"toml_key"`
+	EnvVar        *EnvVarCheck       `yaml:"env_var"`
+	NoEnvVar      *EnvVarCheck       `yaml:"no_env_var"`
+	CommandAvail  *CommandAvailCheck `yaml:"command_available"`
+}
+
+type Contract struct {
+	ID          string       `yaml:"id"`
+	Description string       `yaml:"description"`
+	Type        ContractType `yaml:"type"`
+	Trigger     Trigger      `yaml:"trigger"`
+	Scope       Scope        `yaml:"-"` // custom unmarshal
+	SkipIf      *SkipIf      `yaml:"skip_if"`
+	Checks      []Check      `yaml:"checks"`
+	Builtin     bool         `yaml:"-"` // set by loader, not in YAML
+}
+
+// CheckStatus is the outcome of a single check evaluation.
+type CheckStatus string
+
+const (
+	StatusPass   CheckStatus = "pass"
+	StatusFail   CheckStatus = "fail"
+	StatusWarn   CheckStatus = "warn"
+	StatusExempt CheckStatus = "exempt"
+	StatusSkip   CheckStatus = "skip"
+)
+
+type CheckResult struct {
+	ContractID          string
+	ContractDescription string
+	CheckName           string
+	Status              CheckStatus
+	Message             string
+	File                string
+}
+
+type AuditResult struct {
+	Results []CheckResult `json:"results"`
+	Passed  int           `json:"passed"`
+	Failed  int           `json:"failed"`
+	Warned  int           `json:"warned"`
+	Exempt  int           `json:"exempt"`
+	Skipped int           `json:"skipped"`
+}
