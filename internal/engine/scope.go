@@ -32,7 +32,7 @@ func ResolveScope(scope Scope, projectRoot string) ([]string, error) {
 		}
 		for _, pattern := range scope.Paths {
 			ok, _ := doublestar.Match(pattern, rel)
-			if !ok {
+			if !ok && hasWildcard(pattern) {
 				ok, _ = doublestar.Match(pattern, filepath.Base(rel))
 			}
 			if ok {
@@ -55,9 +55,11 @@ func ResolveScope(scope Scope, projectRoot string) ([]string, error) {
 				excluded = true
 				break
 			}
-			if ok, _ := doublestar.Match(ex, filepath.Base(rel)); ok {
-				excluded = true
-				break
+			if hasWildcard(ex) {
+				if ok, _ := doublestar.Match(ex, filepath.Base(rel)); ok {
+					excluded = true
+					break
+				}
 			}
 		}
 		if !excluded {
@@ -65,6 +67,14 @@ func ResolveScope(scope Scope, projectRoot string) ([]string, error) {
 		}
 	}
 	return filtered, nil
+}
+
+// hasWildcard reports whether a glob pattern contains wildcard characters.
+// The base-name fallback in ResolveScope only applies to wildcard patterns so
+// that exact filenames like ".gitignore" match only at the path where they appear,
+// not at every depth in the repo.
+func hasWildcard(pattern string) bool {
+	return strings.ContainsAny(pattern, "*?[")
 }
 
 // listFiles returns tracked git files, or falls back to filesystem walk.

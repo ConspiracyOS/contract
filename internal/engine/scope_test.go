@@ -104,6 +104,30 @@ func TestResolveScope_GitFiles(t *testing.T) {
 	}
 }
 
+// TestResolveScope_ExactFilenameOnlyMatchesPath verifies that a non-wildcard pattern
+// like ".gitignore" does NOT use the base-name fallback, so only the root-level file
+// matches — not .gitignore files in subdirectories. This is the C-PROC05 regression.
+func TestResolveScope_ExactFilenameOnlyMatchesPath(t *testing.T) {
+	dir := t.TempDir()
+	// Root .gitignore — should be included.
+	os.WriteFile(filepath.Join(dir, ".gitignore"), []byte("worktrees/\n"), 0644)
+	// Subdirectory .gitignore — should NOT be included.
+	sub := filepath.Join(dir, "roles", "sysadmin")
+	os.MkdirAll(sub, 0755)
+	os.WriteFile(filepath.Join(sub, ".gitignore"), []byte("*.log\n"), 0644)
+
+	files, err := engine.ResolveScope(engine.Scope{Paths: []string{".gitignore"}}, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 {
+		t.Fatalf("expected only root .gitignore, got %d files: %v", len(files), files)
+	}
+	if filepath.Base(files[0]) != ".gitignore" || filepath.Dir(files[0]) != dir {
+		t.Fatalf("expected root .gitignore at %s, got %s", dir, files[0])
+	}
+}
+
 // TestResolveScope_BasenameSubdir verifies that bare glob patterns like "*.ts"
 // match files in subdirectories via the basename fallback (rel path "src/foo.ts"
 // does not match "*.ts" directly, but filepath.Base("src/foo.ts") == "foo.ts" does).
