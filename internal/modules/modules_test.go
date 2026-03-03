@@ -391,6 +391,37 @@ func TestCheckPathNotExists_Exists(t *testing.T) {
 	}
 }
 
+// Line-anchor tests — ^ and $ must match line boundaries, not input boundaries
+
+func TestCheckRegexInFile_LineAnchor_Match(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "gitignore")
+	// pattern is on the second line — must match with ^ anchor
+	os.WriteFile(f, []byte(".git/\nworktrees/\n*.log\n"), 0644)
+	result := modules.CheckRegexInFile(f, `^worktrees/`)
+	if !result.Pass {
+		t.Fatalf("expected pass: ^worktrees/ should match line-start, got: %s", result.Reason)
+	}
+}
+
+func TestCheckRegexInFile_LineAnchor_NoMatch(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "gitignore")
+	// pattern is in the middle of a line — should not match ^
+	os.WriteFile(f, []byte(".git/\n# not worktrees/\n"), 0644)
+	result := modules.CheckRegexInFile(f, `^worktrees/`)
+	if result.Pass {
+		t.Fatal("expected fail: ^worktrees/ should not match mid-line occurrence")
+	}
+}
+
+func TestCheckNoRegexInFile_LineAnchor_Match(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "gitignore")
+	os.WriteFile(f, []byte(".git/\nworktrees/\n"), 0644)
+	result := modules.CheckNoRegexInFile(f, `^worktrees/`)
+	if result.Pass {
+		t.Fatal("expected fail: ^worktrees/ matches a line, so no_regex_in_file should fail")
+	}
+}
+
 // CheckNoRegexInFile additional tests
 
 func TestCheckNoRegexInFile_Fail(t *testing.T) {
