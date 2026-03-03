@@ -132,6 +132,27 @@ func TestLoadProjectContracts_InvalidYAML(t *testing.T) {
 	}
 }
 
+func TestLoadConfig_EscalationCommand(t *testing.T) {
+	dir := t.TempDir()
+	agentDir := filepath.Join(dir, ".agent")
+	os.MkdirAll(agentDir, 0755)
+	os.WriteFile(filepath.Join(agentDir, "config.yaml"), []byte(`
+escalation:
+  command: "curl -s -X POST $WEBHOOK_URL -d @-"
+`), 0644)
+
+	cfg, err := project.LoadConfig(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Escalation == nil {
+		t.Fatal("expected non-nil Escalation")
+	}
+	if cfg.Escalation.Command != "curl -s -X POST $WEBHOOK_URL -d @-" {
+		t.Fatalf("unexpected command: %q", cfg.Escalation.Command)
+	}
+}
+
 func TestLoadProjectContracts_OneContract(t *testing.T) {
 	dir := t.TempDir()
 	contractsDir := filepath.Join(dir, ".agent", "contracts")

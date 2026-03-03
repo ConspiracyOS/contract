@@ -2,9 +2,14 @@ package project
 
 // Config represents .agent/config.yaml
 type Config struct {
-	Stack       []string      `yaml:"stack"`
-	Opinionated *Opinionated  `yaml:"opinionated"`
-	Contracts   *ContractsCfg `yaml:"contracts"`
+	Stack       []string       `yaml:"stack"`
+	Opinionated *Opinionated   `yaml:"opinionated"`
+	Contracts   *ContractsCfg  `yaml:"contracts"`
+	Escalation  *EscalationCfg `yaml:"escalation"`
+}
+
+type EscalationCfg struct {
+	Command string `yaml:"command"`
 }
 
 type Opinionated struct {

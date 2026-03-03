@@ -106,12 +106,13 @@ const (
 )
 
 type CheckResult struct {
-	ContractID          string
-	ContractDescription string
-	CheckName           string
-	Status              CheckStatus
-	Message             string
-	File                string
+	ContractID          string      `json:"contract_id"`
+	ContractDescription string      `json:"contract_description"`
+	CheckName           string      `json:"check_name"`
+	Status              CheckStatus `json:"status"`
+	Message             string      `json:"message"`
+	File                string      `json:"file,omitempty"`
+	OnFail              OnFail      `json:"on_fail,omitempty"`
 }
 
 type AuditResult struct {

@@ -8,11 +8,15 @@ import (
 
 // RunCheck evaluates a single check against a file (or GlobalSentinel for global checks).
 func RunCheck(contract *Contract, check *Check, file, projectRoot string) CheckResult {
+	// OnFail carries the raw config value (may be "" if unset).
+	// Dispatch logic below normalises "" to OnFailFail; consumers of CheckResult
+	// must not treat "" as equivalent to OnFailFail — use the Status field instead.
 	base := CheckResult{
 		ContractID:          contract.ID,
 		ContractDescription: contract.Description,
 		CheckName:           check.Name,
 		File:                file,
+		OnFail:              check.OnFail,
 	}
 
 	if modules.EvaluateSkipIf(check.SkipIf, projectRoot) {

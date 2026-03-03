@@ -8,6 +8,7 @@ import (
 
 	"github.com/ConspiracyOS/contracts/internal/builtins"
 	"github.com/ConspiracyOS/contracts/internal/engine"
+	"github.com/ConspiracyOS/contracts/internal/escalation"
 	"github.com/ConspiracyOS/contracts/internal/project"
 	"github.com/ConspiracyOS/contracts/internal/scaffold"
 )
@@ -83,6 +84,10 @@ func auditIn(root, trigger string, noBuiltins, verbose, jsonOut bool) (int, erro
 	}
 
 	result := engine.RunAudit(all, engine.Trigger(trigger), root)
+
+	if cfg.Escalation != nil && cfg.Escalation.Command != "" {
+		escalation.Dispatch(cfg.Escalation.Command, result)
+	}
 
 	if jsonOut {
 		fmt.Println(engine.FormatJSON(result))

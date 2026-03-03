@@ -319,3 +319,35 @@ func TestRunner_SkipIf(t *testing.T) {
 		t.Fatalf("expected skip, got %s", result.Status)
 	}
 }
+
+func TestRunner_OnFail_CarriedThrough(t *testing.T) {
+	// escalate → StatusFail, but OnFail must be OnFailEscalate
+	c := contractWith(engine.Check{
+		Name:    "esc",
+		OnFail:  engine.OnFailEscalate,
+		Command: &engine.CommandCheck{Run: "false"},
+	})
+	result := engine.RunCheck(c, &c.Checks[0], engine.GlobalSentinel, t.TempDir())
+	if result.Status != engine.StatusFail {
+		t.Fatalf("expected StatusFail, got %s", result.Status)
+	}
+	if result.OnFail != engine.OnFailEscalate {
+		t.Fatalf("expected OnFail=escalate, got %q", result.OnFail)
+	}
+}
+
+func TestRunner_Alert_OnFail_CarriedThrough(t *testing.T) {
+	// alert → StatusWarn, OnFail must be OnFailAlert
+	c := contractWith(engine.Check{
+		Name:    "alrt",
+		OnFail:  engine.OnFailAlert,
+		Command: &engine.CommandCheck{Run: "false"},
+	})
+	result := engine.RunCheck(c, &c.Checks[0], engine.GlobalSentinel, t.TempDir())
+	if result.Status != engine.StatusWarn {
+		t.Fatalf("expected StatusWarn, got %s", result.Status)
+	}
+	if result.OnFail != engine.OnFailAlert {
+		t.Fatalf("expected OnFail=alert, got %q", result.OnFail)
+	}
+}
