@@ -66,6 +66,20 @@ scope:
 When `scope` has `paths`, each check runs once per matching file and the file path
 is available in the check context.
 
+Pattern matching rules:
+
+| Pattern | Matches |
+|---|---|
+| `**/*.go` | All `.go` files at any depth |
+| `src/**/*.go` | `.go` files under `src/` only |
+| `*.go` | All `.go` files at any depth (bare wildcard matches by basename) |
+| `.gitignore` | Only the root `.gitignore` (exact path, no basename fallback) |
+| `go.mod` | Only the root `go.mod` (exact path, no basename fallback) |
+
+Bare wildcard patterns (containing `*`, `?`, or `[`) match files by basename at any
+depth. Exact filenames without wildcards match only at the specified path relative to
+the project root. Use `**/<name>` to explicitly match a filename at any depth.
+
 ### skip_if
 
 Skip the entire contract when a condition is true:
