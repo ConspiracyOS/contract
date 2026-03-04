@@ -1,0 +1,11 @@
+id: C-RS-002
+description: cargo fmt must be clean
+type: atomic
+tags: [pre-commit]
+scope: global
+checks:
+  - name: cargo fmt check
+    command:
+      run: "cargo fmt --check 2>&1"
+      exit_code: 0
+    on_fail: fail

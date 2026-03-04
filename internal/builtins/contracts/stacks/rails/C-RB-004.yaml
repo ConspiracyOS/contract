@@ -1,0 +1,13 @@
+id: C-RB-004
+description: Bullet gem must be present for N+1 detection
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["Gemfile"]
+checks:
+  - name: bullet gem in Gemfile
+    regex_in_file:
+      pattern: "bullet"
+    on_fail: warn
+    skip_if:
+      path_not_exists: Gemfile

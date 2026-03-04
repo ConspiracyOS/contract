@@ -1,20 +1,17 @@
 package project
 
-// Config represents .agent/config.yaml
+// Config represents .contracts/config.yaml
 type Config struct {
-	Stack       []string       `yaml:"stack"`
-	Opinionated *Opinionated   `yaml:"opinionated"`
-	Contracts   *ContractsCfg  `yaml:"contracts"`
-	Escalation  *EscalationCfg `yaml:"escalation"`
+	MinVersion string         `yaml:"min_version"` // minimum contracts version required, e.g. "0.2"
+	Stack      []string       `yaml:"stack"`
+	Contracts  *ContractsCfg  `yaml:"contracts"`
+	Escalation *EscalationCfg `yaml:"escalation"`
 }
 
 type EscalationCfg struct {
 	Command string `yaml:"command"`
 }
 
-type Opinionated struct {
-	Presets []string `yaml:"presets"`
-}
 
 type ContractsCfg struct {
 	RequireCoverage *bool    `yaml:"require_coverage"`

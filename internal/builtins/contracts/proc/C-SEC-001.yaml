@@ -1,0 +1,16 @@
+id: C-SEC-001
+description: .env files must be gitignored
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: [".gitignore"]
+checks:
+  - name: .env in .gitignore
+    severity: high
+    category: security
+    what: ".env file is not listed in .gitignore"
+    verify: "grep -n '^\\.env' .gitignore"
+    affects: [".gitignore", ".env"]
+    regex_in_file:
+      pattern: '^\\.env'
+    on_fail: fail

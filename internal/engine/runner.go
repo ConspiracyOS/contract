@@ -19,6 +19,16 @@ func RunCheck(contract *Contract, check *Check, file, projectRoot string) CheckR
 		OnFail:              check.OnFail,
 	}
 
+	// Propagate brief-mode fields
+	base.Severity = check.Severity
+	if base.Severity == "" {
+		base.Severity = DefaultSeverity(check.OnFail)
+	}
+	base.Category = check.Category
+	base.What     = check.What
+	base.Verify   = check.Verify
+	base.Affects  = check.Affects
+
 	if modules.EvaluateSkipIf(check.SkipIf, projectRoot) {
 		base.Status = StatusSkip
 		base.Message = "skip_if condition met"
@@ -26,6 +36,7 @@ func RunCheck(contract *Contract, check *Check, file, projectRoot string) CheckR
 	}
 
 	result := dispatch(check, file, projectRoot)
+	base.Evidence = result.Evidence
 
 	if result.Pass {
 		base.Status = StatusPass

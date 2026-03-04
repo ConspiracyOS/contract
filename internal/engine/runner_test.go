@@ -11,9 +11,9 @@ import (
 func contractWith(check engine.Check) *engine.Contract {
 	return &engine.Contract{
 		ID: "T-001", Description: "test",
-		Trigger: engine.TriggerCommit,
-		Scope:   engine.Scope{Global: true},
-		Checks:  []engine.Check{check},
+		Tags:  []string{"pre-commit"},
+		Scope: engine.Scope{Global: true},
+		Checks: []engine.Check{check},
 	}
 }
 
@@ -349,5 +349,51 @@ func TestRunner_Alert_OnFail_CarriedThrough(t *testing.T) {
 	}
 	if result.OnFail != engine.OnFailAlert {
 		t.Fatalf("expected OnFail=alert, got %q", result.OnFail)
+	}
+}
+
+func TestRunCheck_PopulatesBriefFields(t *testing.T) {
+	c := &engine.Contract{
+		ID:          "TEST-001",
+		Description: "test",
+		Checks: []engine.Check{{
+			Name:     "check",
+			Severity: "critical",
+			Category: "performance",
+			What:     "Something is wrong",
+			Verify:   "echo ok",
+			Affects:  []string{"/tmp"},
+			Command:  &engine.CommandCheck{Run: "echo 'evidence output'", ExitCode: 0},
+			OnFail:   engine.OnFailFail,
+		}},
+	}
+	result := engine.RunCheck(c, &c.Checks[0], engine.GlobalSentinel, ".")
+	if result.Severity != "critical" {
+		t.Errorf("expected severity critical, got %q", result.Severity)
+	}
+	if result.What != "Something is wrong" {
+		t.Errorf("expected what field propagated, got %q", result.What)
+	}
+	if result.Evidence == "" {
+		t.Error("expected evidence from stdout")
+	}
+	if result.Verify != "echo ok" {
+		t.Errorf("expected verify propagated, got %q", result.Verify)
+	}
+}
+
+func TestRunCheck_DefaultSeverity(t *testing.T) {
+	c := &engine.Contract{
+		ID: "TEST-002",
+		Checks: []engine.Check{{
+			Name:    "check",
+			Command: &engine.CommandCheck{Run: "false"},
+			OnFail:  engine.OnFailFail,
+			// No Severity set — should derive from on_fail
+		}},
+	}
+	result := engine.RunCheck(c, &c.Checks[0], engine.GlobalSentinel, ".")
+	if result.Severity != "high" {
+		t.Errorf("expected high (derived from fail), got %q", result.Severity)
 	}
 }

@@ -1,7 +1,7 @@
 id: C-TS-001
 description: TypeScript must use strict mode
 type: atomic
-trigger: commit
+tags: [pre-commit]
 scope:
   paths: ["tsconfig.json", "tsconfig.*.json"]
 checks:

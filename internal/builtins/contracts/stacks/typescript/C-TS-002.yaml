@@ -1,0 +1,12 @@
+id: C-TS-002
+description: No unchecked any casts in source
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["src/**/*.ts", "lib/**/*.ts"]
+  exclude: ["**/*.test.ts", "**/*.d.ts"]
+checks:
+  - name: no bare as-any cast
+    no_regex_in_file:
+      pattern: 'as any(?!\s*\/\/ @contract)'
+    on_fail: require_exemption

@@ -1,0 +1,12 @@
+id: C-JS-003
+description: No eval usage in JavaScript source
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["src/**/*.js", "lib/**/*.js", "app/**/*.js", "**/*.mjs", "**/*.cjs"]
+  exclude: ["**/*.test.js", "**/*.spec.js"]
+checks:
+  - name: no eval in source
+    no_regex_in_file:
+      pattern: '\beval\s*\('
+    on_fail: require_exemption

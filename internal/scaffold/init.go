@@ -7,24 +7,21 @@ import (
 	"path/filepath"
 )
 
-const defaultConfig = `# .agent/config.yaml
-# stack: [go, typescript, python, rust]  # opt-in to stack-specific contracts
+const defaultConfig = `# .contracts/config.yaml
+# min_version: "0.2"  # fail early if contracts CLI is too old
+# stack: [go, typescript, python, rust, elixir, javascript, rails, shell, containers, mobile]
 stack: []
 `
 
-// InitProject creates .agent/ structure in projectRoot.
+// InitProject creates .contracts/ structure in projectRoot.
 func InitProject(projectRoot string) error {
-	dirs := []string{
-		filepath.Join(projectRoot, ".agent", "contracts"),
+	contractsDir := filepath.Join(projectRoot, ".contracts")
+	if err := os.MkdirAll(contractsDir, 0755); err != nil {
+		return err
 	}
-	for _, d := range dirs {
-		if err := os.MkdirAll(d, 0755); err != nil {
-			return err
-		}
-		fmt.Printf("  created %s\n", d)
-	}
+	fmt.Printf("  created %s\n", contractsDir)
 
-	configPath := filepath.Join(projectRoot, ".agent", "config.yaml")
+	configPath := filepath.Join(contractsDir, "config.yaml")
 	_, statErr := os.Stat(configPath)
 	if statErr != nil && !errors.Is(statErr, os.ErrNotExist) {
 		return fmt.Errorf("stat %s: %w", configPath, statErr)

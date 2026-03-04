@@ -1,0 +1,13 @@
+id: C-JS-002
+description: JavaScript tests should pass when configured
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: npm test
+    command:
+      run: "npm test --if-present 2>&1 | tail -5"
+      exit_code: 0
+    on_fail: warn
+    skip_if:
+      command_not_available: npm

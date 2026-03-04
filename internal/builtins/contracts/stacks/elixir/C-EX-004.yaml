@@ -1,0 +1,13 @@
+id: C-EX-004
+description: All umbrella apps must pass mix test
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: all umbrella apps tested
+    command:
+      run: "mix test --cover 2>&1 | tail -5"
+      exit_code: 0
+    on_fail: fail
+    skip_if:
+      path_not_exists: "apps"

@@ -9,15 +9,15 @@ import (
 
 func writeContract(t *testing.T, dir, name, content string) {
 	t.Helper()
-	contractsDir := filepath.Join(dir, ".agent", "contracts")
+	contractsDir := filepath.Join(dir, ".contracts")
 	os.MkdirAll(contractsDir, 0755)
 	os.WriteFile(filepath.Join(contractsDir, name), []byte(content), 0644)
 }
 
-func TestAuditIn_EmptyDir(t *testing.T) {
+func TestCheckIn_EmptyDir(t *testing.T) {
 	dir := t.TempDir()
 	// noBuiltins=true: only project contracts, empty dir → "No contracts found"
-	code, err := auditIn(dir, "commit", true, false, false)
+	code, err := checkIn(dir, nil, nil, true, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -26,13 +26,13 @@ func TestAuditIn_EmptyDir(t *testing.T) {
 	}
 }
 
-func TestAuditIn_PassingContract(t *testing.T) {
+func TestCheckIn_PassingContract(t *testing.T) {
 	dir := t.TempDir()
 	writeContract(t, dir, "pass.yaml", `
 id: TEST-PASS
 description: Always passing
 type: detective
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: pass
@@ -40,7 +40,7 @@ checks:
       run: "true"
     on_fail: fail
 `)
-	code, err := auditIn(dir, "commit", true, false, false)
+	code, err := checkIn(dir, nil, nil, true, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -49,13 +49,13 @@ checks:
 	}
 }
 
-func TestAuditIn_FailingContract(t *testing.T) {
+func TestCheckIn_FailingContract(t *testing.T) {
 	dir := t.TempDir()
 	writeContract(t, dir, "fail.yaml", `
 id: TEST-FAIL
 description: Always failing
 type: detective
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: fail
@@ -63,7 +63,7 @@ checks:
       run: "false"
     on_fail: fail
 `)
-	code, err := auditIn(dir, "commit", true, false, false)
+	code, err := checkIn(dir, nil, nil, true, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -72,13 +72,13 @@ checks:
 	}
 }
 
-func TestAuditIn_JSONOutput(t *testing.T) {
+func TestCheckIn_JSONOutput(t *testing.T) {
 	dir := t.TempDir()
 	writeContract(t, dir, "pass.yaml", `
 id: TEST-JSON
 description: JSON output test
 type: detective
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: pass
@@ -86,7 +86,7 @@ checks:
       run: "true"
     on_fail: fail
 `)
-	code, err := auditIn(dir, "commit", true, false, true)
+	code, err := checkIn(dir, nil, nil, true, false, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -95,10 +95,10 @@ checks:
 	}
 }
 
-func TestAuditIn_NoBuiltins(t *testing.T) {
+func TestCheckIn_NoBuiltins(t *testing.T) {
 	dir := t.TempDir()
 	// No project contracts, no builtins → empty
-	code, err := auditIn(dir, "commit", true, false, false)
+	code, err := checkIn(dir, nil, nil, true, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestListContractsIn_WithContract(t *testing.T) {
 id: LIST-001
 description: Listed contract
 type: detective
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: ok
@@ -135,7 +135,7 @@ checks:
 
 func TestCheckContractIn_NotFound(t *testing.T) {
 	dir := t.TempDir()
-	_, err := checkContractIn(dir, "NONEXISTENT-001", "commit")
+	_, err := checkContractIn(dir, "NONEXISTENT-001")
 	if err == nil {
 		t.Fatal("expected error for nonexistent contract")
 	}
@@ -150,7 +150,7 @@ func TestCheckContractIn_Pass(t *testing.T) {
 id: CHECK-001
 description: Check test
 type: detective
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: pass
@@ -158,7 +158,7 @@ checks:
       run: "true"
     on_fail: fail
 `)
-	code, err := checkContractIn(dir, "CHECK-001", "commit")
+	code, err := checkContractIn(dir, "CHECK-001")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -173,7 +173,7 @@ func TestCheckContractIn_Fail(t *testing.T) {
 id: CHECK-002
 description: Failing check
 type: detective
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: fail
@@ -181,7 +181,7 @@ checks:
       run: "false"
     on_fail: fail
 `)
-	code, err := checkContractIn(dir, "CHECK-002", "commit")
+	code, err := checkContractIn(dir, "CHECK-002")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -190,23 +190,23 @@ checks:
 	}
 }
 
-func TestAuditIn_WithBuiltins(t *testing.T) {
-	// noBuiltins=false loads built-in contracts; covers builtins.Load path in auditIn
+func TestCheckIn_WithBuiltins(t *testing.T) {
+	// noBuiltins=false loads built-in contracts; covers builtins.Load path in checkIn
 	dir := t.TempDir()
 	// No project contracts; builtins may pass or fail — just verify no error
-	_, err := auditIn(dir, "commit", false, false, false)
+	_, err := checkIn(dir, nil, nil, false, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error loading builtins: %v", err)
 	}
 }
 
-func TestAuditIn_Verbose(t *testing.T) {
+func TestCheckIn_Verbose(t *testing.T) {
 	dir := t.TempDir()
 	writeContract(t, dir, "v.yaml", `
 id: VERBOSE-001
 description: Verbose output test
 type: detective
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: pass
@@ -214,7 +214,7 @@ checks:
       run: "true"
     on_fail: fail
 `)
-	code, err := auditIn(dir, "commit", true, true, false)
+	code, err := checkIn(dir, nil, nil, true, true, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -225,7 +225,7 @@ checks:
 
 func TestListContractsIn_BadConfig(t *testing.T) {
 	dir := t.TempDir()
-	agentDir := filepath.Join(dir, ".agent")
+	agentDir := filepath.Join(dir, ".contracts")
 	os.MkdirAll(agentDir, 0755)
 	os.WriteFile(filepath.Join(agentDir, "config.yaml"), []byte(":\ninvalid:\n"), 0644)
 
@@ -238,13 +238,13 @@ func TestListContractsIn_BadConfig(t *testing.T) {
 	}
 }
 
-func TestAuditIn_BadConfig(t *testing.T) {
+func TestCheckIn_BadConfig(t *testing.T) {
 	dir := t.TempDir()
-	agentDir := filepath.Join(dir, ".agent")
+	agentDir := filepath.Join(dir, ".contracts")
 	os.MkdirAll(agentDir, 0755)
 	os.WriteFile(filepath.Join(agentDir, "config.yaml"), []byte(":\ninvalid:\n"), 0644)
 
-	_, err := auditIn(dir, "commit", true, false, false)
+	_, err := checkIn(dir, nil, nil, true, false, false)
 	if err == nil {
 		t.Fatal("expected error for bad config")
 	}
@@ -253,15 +253,15 @@ func TestAuditIn_BadConfig(t *testing.T) {
 	}
 }
 
-func TestAuditIn_EscalationDispatched(t *testing.T) {
+func TestCheckIn_EscalationDispatched(t *testing.T) {
 	dir := t.TempDir()
-	os.MkdirAll(filepath.Join(dir, ".agent"), 0755)
+	os.MkdirAll(filepath.Join(dir, ".contracts"), 0755)
 
 	writeContract(t, dir, "esc.yaml", `
 id: ESC-001
 description: escalation test
 type: detective
-trigger: commit
+tags: [schedule]
 scope: global
 checks:
   - name: fail
@@ -271,9 +271,9 @@ checks:
 `)
 
 	outFile := filepath.Join(dir, "escalation-out.json")
-	os.WriteFile(filepath.Join(dir, ".agent", "config.yaml"), []byte("escalation:\n  command: \"cat > "+outFile+"\"\n"), 0644)
+	os.WriteFile(filepath.Join(dir, ".contracts", "config.yaml"), []byte("escalation:\n  command: \"cat > "+outFile+"\"\n"), 0644)
 
-	code, err := auditIn(dir, "commit", true, false, false)
+	code, err := checkIn(dir, nil, nil, true, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -290,15 +290,15 @@ checks:
 	}
 }
 
-func TestAuditIn_EscalationNotDispatchedForPlainFail(t *testing.T) {
+func TestCheckIn_EscalationNotDispatchedForPlainFail(t *testing.T) {
 	dir := t.TempDir()
-	os.MkdirAll(filepath.Join(dir, ".agent"), 0755)
+	os.MkdirAll(filepath.Join(dir, ".contracts"), 0755)
 
 	writeContract(t, dir, "fail.yaml", `
 id: PLAIN-001
 description: plain fail
 type: detective
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: fail
@@ -307,9 +307,9 @@ checks:
     on_fail: fail
 `)
 	outFile := filepath.Join(dir, "should-not-exist.json")
-	os.WriteFile(filepath.Join(dir, ".agent", "config.yaml"), []byte("escalation:\n  command: \"cat > "+outFile+"\"\n"), 0644)
+	os.WriteFile(filepath.Join(dir, ".contracts", "config.yaml"), []byte("escalation:\n  command: \"cat > "+outFile+"\"\n"), 0644)
 
-	code, err := auditIn(dir, "commit", true, false, false)
+	code, err := checkIn(dir, nil, nil, true, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -321,14 +321,14 @@ checks:
 	}
 }
 
-func TestAuditIn_NoEscalationConfig(t *testing.T) {
+func TestCheckIn_NoEscalationConfig(t *testing.T) {
 	dir := t.TempDir()
 	// escalate check fails, but no escalation config → just exit 1, no dispatch
 	writeContract(t, dir, "esc.yaml", `
 id: ESC-002
 description: no config
 type: detective
-trigger: commit
+tags: [schedule]
 scope: global
 checks:
   - name: fail
@@ -336,7 +336,7 @@ checks:
       run: "false"
     on_fail: escalate
 `)
-	code, err := auditIn(dir, "commit", true, false, false)
+	code, err := checkIn(dir, nil, nil, true, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -344,4 +344,121 @@ checks:
 		t.Errorf("expected exit 1, got %d", code)
 	}
 	// No dispatch file to check — just must not panic
+}
+
+func TestCheckIn_TagFilter(t *testing.T) {
+	dir := t.TempDir()
+	writeContract(t, dir, "pre.yaml", `
+id: TAG-PRE
+description: pre-commit contract
+type: atomic
+tags: [pre-commit]
+scope: global
+checks:
+  - name: pass
+    command:
+      run: "true"
+    on_fail: fail
+`)
+	writeContract(t, dir, "sched.yaml", `
+id: TAG-SCHED
+description: schedule contract
+type: detective
+tags: [schedule]
+scope: global
+checks:
+  - name: fail
+    command:
+      run: "false"
+    on_fail: fail
+`)
+	// Filter to pre-commit only — schedule contract must not run (must not fail)
+	code, err := checkIn(dir, []string{"pre-commit"}, nil, true, false, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if code != 0 {
+		t.Errorf("expected exit 0 (only pre-commit runs, and it passes), got %d", code)
+	}
+}
+
+func TestCheckIn_SkipTags(t *testing.T) {
+	dir := t.TempDir()
+	writeContract(t, dir, "fast.yaml", `
+id: SKIP-FAST
+description: fast contract
+type: atomic
+tags: [pre-commit]
+scope: global
+checks:
+  - name: pass
+    command:
+      run: "true"
+    on_fail: fail
+`)
+	writeContract(t, dir, "slow.yaml", `
+id: SKIP-SLOW
+description: slow failing contract
+type: detective
+tags: [pre-commit, slow]
+scope: global
+checks:
+  - name: fail
+    command:
+      run: "false"
+    on_fail: fail
+`)
+	// Skip slow — only SKIP-FAST runs, must pass
+	code, err := checkIn(dir, nil, []string{"slow"}, true, false, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if code != 0 {
+		t.Errorf("expected exit 0 (slow contract skipped), got %d", code)
+	}
+}
+
+func TestBriefIn_NoFindings(t *testing.T) {
+	dir := t.TempDir()
+	writeContract(t, dir, "pass.yaml", `
+id: BRIEF-PASS
+description: passing
+type: atomic
+tags: [pre-commit]
+scope: global
+checks:
+  - name: ok
+    command:
+      run: "true"
+    on_fail: fail
+`)
+	err := briefIn(dir, nil, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestBriefIn_WithFailure(t *testing.T) {
+	dir := t.TempDir()
+	writeContract(t, dir, "fail.yaml", `
+id: BRIEF-FAIL
+description: disk check
+type: detective
+tags: [schedule]
+scope: global
+checks:
+  - name: disk
+    severity: critical
+    category: performance
+    what: "Disk usage too high"
+    verify: "df /"
+    command:
+      run: "false"
+    on_fail: fail
+`)
+	err := briefIn(dir, nil, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// briefIn exits 0 regardless — it's informational, not enforcement
 }

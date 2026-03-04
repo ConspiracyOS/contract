@@ -1,0 +1,13 @@
+id: C-EX-002
+description: mix credo strict must pass
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: credo strict
+    command:
+      run: "mix credo --strict"
+      exit_code: 0
+    on_fail: fail
+    skip_if:
+      command_not_available: mix

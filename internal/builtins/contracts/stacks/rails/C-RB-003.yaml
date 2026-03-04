@@ -1,0 +1,11 @@
+id: C-RB-003
+description: find_by calls must include nil guard
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["app/**/*.rb"]
+checks:
+  - name: no bare find_by without nil guard
+    no_regex_in_file:
+      pattern: 'find_by\([^)]+\)\.'
+    on_fail: require_exemption

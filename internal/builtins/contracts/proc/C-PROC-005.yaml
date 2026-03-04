@@ -1,0 +1,16 @@
+id: C-PROC-005
+description: worktrees/ must be gitignored
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: [".gitignore"]
+checks:
+  - name: worktrees in .gitignore
+    severity: medium
+    category: integrity
+    what: "worktrees/ directory is not gitignored"
+    verify: "grep '^worktrees/' .gitignore"
+    affects: [".gitignore"]
+    regex_in_file:
+      pattern: "^worktrees/"
+    on_fail: fail

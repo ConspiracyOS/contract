@@ -1,0 +1,11 @@
+id: C-PY-001
+description: Python .venv must be at project root
+type: atomic
+tags: [pre-commit]
+scope: global
+checks:
+  - name: .venv at project root
+    path_exists:
+      path: ".venv"
+      type: directory
+    on_fail: warn

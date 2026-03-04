@@ -23,9 +23,9 @@ func TestFindRoot_Git(t *testing.T) {
 }
 
 func TestFindRoot_AgentConfig(t *testing.T) {
-	// FindRoot should prefer .agent/config.yaml over .git
+	// FindRoot should prefer .contracts/config.yaml over .git
 	dir := t.TempDir()
-	agentDir := filepath.Join(dir, ".agent")
+	agentDir := filepath.Join(dir, ".contracts")
 	os.MkdirAll(agentDir, 0755)
 	os.WriteFile(filepath.Join(agentDir, "config.yaml"), []byte("stack: []"), 0644)
 
@@ -47,7 +47,7 @@ func TestFindRoot_NotFound(t *testing.T) {
 }
 
 func TestLoadConfig_Empty(t *testing.T) {
-	// LoadConfig returns empty Config if .agent/config.yaml doesn't exist
+	// LoadConfig returns empty Config if .contracts/config.yaml doesn't exist
 	cfg, err := project.LoadConfig(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -59,7 +59,7 @@ func TestLoadConfig_Empty(t *testing.T) {
 
 func TestLoadConfig_WithStack(t *testing.T) {
 	dir := t.TempDir()
-	agentDir := filepath.Join(dir, ".agent")
+	agentDir := filepath.Join(dir, ".contracts")
 	os.MkdirAll(agentDir, 0755)
 
 	type raw struct {
@@ -79,7 +79,7 @@ func TestLoadConfig_WithStack(t *testing.T) {
 
 func TestLoadConfig_BadYAML(t *testing.T) {
 	dir := t.TempDir()
-	agentDir := filepath.Join(dir, ".agent")
+	agentDir := filepath.Join(dir, ".contracts")
 	os.MkdirAll(agentDir, 0755)
 	os.WriteFile(filepath.Join(agentDir, "config.yaml"), []byte(":\ninvalid: [\n"), 0644)
 
@@ -90,7 +90,7 @@ func TestLoadConfig_BadYAML(t *testing.T) {
 }
 
 func TestLoadProjectContracts_Empty(t *testing.T) {
-	// Returns nil (no error) when .agent/contracts/ doesn't exist
+	// Returns nil (no error) when .contracts/ doesn't exist
 	contracts, err := project.LoadProjectContracts(t.TempDir())
 	if err != nil {
 		t.Fatalf("expected no error for missing dir, got %v", err)
@@ -102,7 +102,7 @@ func TestLoadProjectContracts_Empty(t *testing.T) {
 
 func TestLoadProjectContracts_NonYamlFile(t *testing.T) {
 	dir := t.TempDir()
-	contractsDir := filepath.Join(dir, ".agent", "contracts")
+	contractsDir := filepath.Join(dir, ".contracts", "contracts")
 	os.MkdirAll(contractsDir, 0755)
 	// .json file should be skipped (only .yaml files are loaded)
 	os.WriteFile(filepath.Join(contractsDir, "ignored.json"), []byte(`{"id":"X-001"}`), 0644)
@@ -118,7 +118,7 @@ func TestLoadProjectContracts_NonYamlFile(t *testing.T) {
 
 func TestLoadProjectContracts_InvalidYAML(t *testing.T) {
 	dir := t.TempDir()
-	contractsDir := filepath.Join(dir, ".agent", "contracts")
+	contractsDir := filepath.Join(dir, ".contracts", "contracts")
 	os.MkdirAll(contractsDir, 0755)
 	// Invalid contract — missing required fields — should be silently skipped
 	os.WriteFile(filepath.Join(contractsDir, "bad.yaml"), []byte("notacontract: true\n"), 0644)
@@ -134,7 +134,7 @@ func TestLoadProjectContracts_InvalidYAML(t *testing.T) {
 
 func TestLoadConfig_EscalationCommand(t *testing.T) {
 	dir := t.TempDir()
-	agentDir := filepath.Join(dir, ".agent")
+	agentDir := filepath.Join(dir, ".contracts")
 	os.MkdirAll(agentDir, 0755)
 	os.WriteFile(filepath.Join(agentDir, "config.yaml"), []byte(`
 escalation:
@@ -155,13 +155,12 @@ escalation:
 
 func TestLoadProjectContracts_OneContract(t *testing.T) {
 	dir := t.TempDir()
-	contractsDir := filepath.Join(dir, ".agent", "contracts")
+	contractsDir := filepath.Join(dir, ".contracts", "contracts")
 	os.MkdirAll(contractsDir, 0755)
 
 	yaml := `id: C-TEST-001
 description: test
 type: atomic
-trigger: commit
 scope: global
 checks:
   - name: ok

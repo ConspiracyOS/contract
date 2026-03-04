@@ -1,8 +1,8 @@
 # contracts
 
 A contract enforcement binary for any git project. Define machine-readable invariants
-in YAML, run them on commit/PR/merge hooks or on a schedule, and optionally dispatch
-failures to any shell command (webhook, PagerDuty, Slack, etc.).
+in YAML, tag them for the contexts they apply to (git hooks, schedules, agent tool-use,
+etc.), and optionally dispatch failures to any shell command (webhook, PagerDuty, Slack, etc.).
 
 Works standalone — no ConspiracyOS installation required.
 
@@ -13,7 +13,8 @@ go install github.com/ConspiracyOS/contracts/cmd/contracts@latest
 
 cd your-project
 contracts init        # creates .agent/contracts/ + installs git hooks
-contracts audit       # run all contracts for the current trigger
+contracts check       # run all contracts
+contracts check --tags pre-commit   # run only contracts tagged pre-commit
 ```
 
 `contracts init` is idempotent — re-run it safely after adding contracts.
@@ -26,7 +27,7 @@ Contracts live in `.agent/contracts/*.yaml`. Each file defines one contract.
 id: C-MYPROJECT-001
 description: No hardcoded secrets in source files
 type: atomic
-trigger: commit
+tags: [pre-commit, security]   # scalar or list; "always" bypasses --tags filter
 scope:
   paths: ["**/*.go", "**/*.ts"]
   exclude: ["**/*_test.go"]
@@ -48,7 +49,6 @@ checks:
 | `id` | yes | string | Unique identifier, e.g. `C-AUTH-001` |
 | `description` | yes | string | Human-readable summary |
 | `type` | no | `atomic` \| `detective` \| `holistic` | Display-only metadata |
-| `trigger` | yes | `commit` \| `pr` \| `merge` \| `schedule` | When to evaluate |
 | `scope` | no | see below | Which files are in scope |
 | `skip_if` | no | see below | Skip entire contract conditionally |
 | `checks` | yes | list | One or more check assertions |
@@ -239,20 +239,20 @@ Output from the command goes to stderr so `--json` audit output stays clean.
 
 Built-in contracts are activated by declaring a `stack` in `.agent/config.yaml`.
 
-| Stack | Contract | Trigger | Description |
+| Stack | Contract | Tags | Description |
 |---|---|---|---|
-| `go` | C-GO-001 | pr | Go modules must not have replace directives pointing to local paths |
-| `go` | C-GO-002 | pr | go.sum must be committed |
-| `typescript` | C-TS-001 | commit | No `console.log` in TypeScript source files |
+| `go` | C-GO-001 | pre-push | Go modules must not have replace directives pointing to local paths |
+| `go` | C-GO-002 | pre-push | go.sum must be committed |
+| `typescript` | C-TS-001 | pre-commit | No `console.log` in TypeScript source files |
 
 Process contracts are always active (no stack required):
 
-| Contract | Trigger | Description |
+| Contract | Tags | Description |
 |---|---|---|
-| C-PROC02 | pr | PR description must reference a GitHub issue |
-| C-PROC03 | commit | Commit message must be conventional commits format |
-| C-PROC05 | pr | No direct pushes to main |
-| C-SEC02 | commit | No private key material in committed files |
+| C-PROC02 | pre-push | PR description must reference a GitHub issue |
+| C-PROC03 | pre-commit | Commit message must be conventional commits format |
+| C-PROC05 | pre-push | No direct pushes to main |
+| C-SEC02 | pre-commit | No private key material in committed files |
 
 ## CLI reference
 
@@ -262,16 +262,35 @@ contracts [command]
 
 | Command | Flags | Description |
 |---|---|---|
-| `audit` | `--trigger commit\|pr\|merge\|schedule`<br>`--no-builtins`<br>`--verbose`<br>`--json` | Run all applicable contracts. Exits non-zero if any fail. |
-| `contract list` | | List all contracts (builtins + project) with source and trigger. |
-| `contract check <id>` | `--trigger` | Run a single contract by ID. |
+| `check` | `--tags t1,t2`<br>`--skip-tags t3`<br>`--no-builtins`<br>`--verbose`<br>`--json` | Run all matching contracts. No `--tags` runs all. Exits non-zero if any fail. |
+| `contract list` | | List all contracts (builtins + project) with tags and source. |
+| `contract check <id>` | | Run a single contract by ID (ignores tag filter). |
 | `init` | | Scaffold `.agent/` and install git hooks. Idempotent. |
 | `install` | | Re-install git hooks only. Idempotent. |
 
+### Tags
+
+Tags are arbitrary strings. External callers (git hooks, systemd timers, agent CLI hooks)
+pass `--tags` to select which contracts to run. Contracts with no tags run unconditionally
+when no `--tags` filter is active.
+
+Special tag `always`: runs regardless of any `--tags` filter.
+
+Common conventions:
+
+| Tag | Invoked by |
+|---|---|
+| `pre-commit` | git pre-commit hook |
+| `pre-push` | git pre-push hook |
+| `post-merge` | git post-merge hook |
+| `schedule` | systemd timer / cron |
+| `pre-tool` | agent CLI PreToolUse hook |
+| `post-tool` | agent CLI PostToolUse hook |
+
 ## Git hooks
 
-`contracts init` installs `pre-commit` and `pre-push` hooks that run `contracts audit`
-with the appropriate trigger. They are idempotent — re-running `contracts init` or
+`contracts init` installs `pre-commit` and `pre-push` hooks that run `contracts check`
+with the appropriate tag. They are idempotent — re-running `contracts init` or
 `contracts install` won't overwrite custom content.
 
 ## License

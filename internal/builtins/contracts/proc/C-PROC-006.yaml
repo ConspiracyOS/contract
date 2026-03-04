@@ -1,0 +1,19 @@
+id: C-PROC-006
+description: tmp/ directory must not contain stale scripts
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: no stale tmp files
+    severity: low
+    category: integrity
+    what: "tmp/ contains files older than 7 days"
+    verify: "find tmp/ -type f -mtime +7 2>/dev/null | wc -l"
+    affects: ["tmp/"]
+    command:
+      run: "find tmp/ -type f -mtime +7 2>/dev/null | wc -l | tr -d ' '"
+      exit_code: 0
+      output_matches: "^0$"
+    on_fail: warn
+    skip_if:
+      path_not_exists: "tmp"

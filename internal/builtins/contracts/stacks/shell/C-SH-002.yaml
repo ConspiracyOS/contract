@@ -1,0 +1,11 @@
+id: C-SH-002
+description: Shell scripts must use strict mode
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["scripts/**/*.sh"]
+checks:
+  - name: strict mode set
+    regex_in_file:
+      pattern: "set -euo pipefail"
+    on_fail: fail

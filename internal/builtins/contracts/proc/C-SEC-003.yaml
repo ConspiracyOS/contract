@@ -1,0 +1,13 @@
+id: C-SEC-003
+description: .vault_password files must be gitignored
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: [".gitignore"]
+checks:
+  - name: .vault_password in .gitignore
+    regex_in_file:
+      pattern: '^\\.vault_password'
+    on_fail: fail
+    skip_if:
+      path_not_exists: .agent/vault

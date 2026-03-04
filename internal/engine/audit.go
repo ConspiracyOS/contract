@@ -10,20 +10,40 @@ func isFileIndependent(check *Check) bool {
 		check.PathExists != nil || check.PathNotExists != nil
 }
 
-// RunAudit evaluates all contracts for the given trigger and returns aggregated results.
-func RunAudit(contracts []*Contract, trigger Trigger, projectRoot string) AuditResult {
+// contractMatchesTags returns true if the contract should run given the filter.
+// Empty filter means run all. The special tag "always" bypasses any filter.
+func contractMatchesTags(contractTags []string, filterSet map[string]bool, hasFilter bool) bool {
+	if !hasFilter {
+		return true
+	}
+	for _, t := range contractTags {
+		if t == "always" || filterSet[t] {
+			return true
+		}
+	}
+	return false
+}
+
+// RunAudit evaluates contracts whose tags match any of the given tags.
+// An empty tags slice runs all contracts. The special tag "always" bypasses filtering.
+func RunAudit(contracts []*Contract, tags []string, projectRoot string) AuditResult {
+	filterSet := make(map[string]bool, len(tags))
+	for _, t := range tags {
+		filterSet[t] = true
+	}
+
 	var results []CheckResult
 
 	for _, contract := range contracts {
-		// Wrong trigger: skip all checks in this contract
-		if contract.Trigger != trigger {
+		// No matching tags: skip all checks in this contract
+		if !contractMatchesTags(contract.Tags, filterSet, len(tags) > 0) {
 			for _, check := range contract.Checks {
 				results = append(results, CheckResult{
 					ContractID:          contract.ID,
 					ContractDescription: contract.Description,
 					CheckName:           check.Name,
 					Status:              StatusSkip,
-					Message:             "trigger mismatch",
+					Message:             "no matching tags",
 				})
 			}
 			continue

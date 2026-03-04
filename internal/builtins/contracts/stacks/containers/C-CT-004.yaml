@@ -1,0 +1,11 @@
+id: C-CT-004
+description: No localhost references in container service configs
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["**/docker-compose*.yml", "**/docker-compose*.yaml", "**/compose*.yml", "**/compose*.yaml"]
+checks:
+  - name: no localhost in service config
+    no_regex_in_file:
+      pattern: "localhost"
+    on_fail: require_exemption

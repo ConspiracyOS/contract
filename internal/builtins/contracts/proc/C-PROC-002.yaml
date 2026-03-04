@@ -1,0 +1,11 @@
+id: C-PROC-002
+description: PR description must reference a GitHub issue
+type: atomic
+tags: [pre-push]
+scope:
+  paths: [".github/PULL_REQUEST_TEMPLATE.md"]
+checks:
+  - name: PR template has issue section
+    regex_in_file:
+      pattern: "Closes #"
+    on_fail: warn

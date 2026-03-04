@@ -1,0 +1,13 @@
+id: C-PY-003
+description: mypy strict must pass on public modules
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: mypy strict
+    command:
+      run: "uv run mypy --strict src/"
+      exit_code: 0
+    on_fail: fail
+    skip_if:
+      path_not_exists: "src"

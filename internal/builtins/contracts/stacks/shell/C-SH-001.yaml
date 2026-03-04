@@ -1,0 +1,11 @@
+id: C-SH-001
+description: Shell scripts must use bash shebang
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["scripts/**/*.sh"]
+checks:
+  - name: bash shebang present
+    regex_in_file:
+      pattern: "^#!/usr/bin/env bash"
+    on_fail: fail

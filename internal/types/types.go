@@ -5,8 +5,9 @@ package types
 
 // Result is the outcome of a single module check.
 type Result struct {
-	Pass   bool
-	Reason string
+	Pass     bool
+	Reason   string
+	Evidence string // raw stdout from the check run (auto-captured, never authored)
 }
 
 // CommandCheck defines a shell command check.

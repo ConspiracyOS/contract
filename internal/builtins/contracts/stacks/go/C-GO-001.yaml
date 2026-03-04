@@ -1,7 +1,7 @@
 id: C-GO-001
 description: Go modules must not have replace directives pointing to local paths
 type: atomic
-trigger: pr
+tags: [pre-push]
 scope:
   paths: ["go.mod"]
 checks:

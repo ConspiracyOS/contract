@@ -1,0 +1,13 @@
+id: C-DOC-002
+description: Markdown files in docs/ must have a type header
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["docs/*.md"]
+checks:
+  - name: type header present
+    regex_in_file:
+      pattern: "<!-- type:"
+    on_fail: warn
+    skip_if:
+      path_not_exists: docs

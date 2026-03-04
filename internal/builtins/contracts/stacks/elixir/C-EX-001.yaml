@@ -1,0 +1,13 @@
+id: C-EX-001
+description: mix format must be clean
+type: atomic
+tags: [pre-commit]
+scope: global
+checks:
+  - name: mix format check
+    command:
+      run: "mix format --check-formatted"
+      exit_code: 0
+    on_fail: fail
+    skip_if:
+      command_not_available: mix

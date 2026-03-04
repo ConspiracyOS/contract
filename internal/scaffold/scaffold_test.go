@@ -86,16 +86,16 @@ func TestInitProject(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// .agent/contracts/ should exist
-	contractsDir := filepath.Join(dir, ".agent", "contracts")
+	// .contracts/ should exist
+	contractsDir := filepath.Join(dir, ".contracts")
 	if _, err := os.Stat(contractsDir); errors.Is(err, os.ErrNotExist) {
-		t.Fatal("expected .agent/contracts/ to exist")
+		t.Fatal("expected .contracts/ to exist")
 	}
 
-	// .agent/config.yaml should exist
-	configPath := filepath.Join(dir, ".agent", "config.yaml")
+	// .contracts/config.yaml should exist
+	configPath := filepath.Join(dir, ".contracts", "config.yaml")
 	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
-		t.Fatal("expected .agent/config.yaml to exist")
+		t.Fatal("expected .contracts/config.yaml to exist")
 	}
 }
 
@@ -109,7 +109,7 @@ func TestInitProject_Idempotent(t *testing.T) {
 	}
 
 	// Write custom content to config
-	configPath := filepath.Join(dir, ".agent", "config.yaml")
+	configPath := filepath.Join(dir, ".contracts", "config.yaml")
 	os.WriteFile(configPath, []byte("stack: [go]"), 0644)
 
 	// Second call — must not overwrite config

@@ -1,0 +1,13 @@
+id: C-EX-003
+description: Public Elixir functions must have @spec
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: credo specs check
+    command:
+      run: "mix credo --only Credo.Check.Readability.Specs --strict 2>&1 | tail -3"
+      exit_code: 0
+    on_fail: warn
+    skip_if:
+      command_not_available: mix

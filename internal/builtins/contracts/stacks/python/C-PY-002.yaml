@@ -1,0 +1,11 @@
+id: C-PY-002
+description: Ruff linting must pass
+type: atomic
+tags: [pre-commit]
+scope: global
+checks:
+  - name: ruff check
+    command:
+      run: "uv run ruff check ."
+      exit_code: 0
+    on_fail: fail

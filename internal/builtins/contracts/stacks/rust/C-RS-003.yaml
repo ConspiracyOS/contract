@@ -1,0 +1,12 @@
+id: C-RS-003
+description: All Rust modules must include property-based tests
+type: atomic
+tags: [pre-push]
+scope:
+  paths: ["src/**/*.rs", "lib/**/*.rs"]
+  exclude: ["**/build.rs", "**/*.pb.rs", "**/benches/**", "**/tests/**"]
+checks:
+  - name: proptest import present
+    regex_in_file:
+      pattern: "proptest::"
+    on_fail: require_exemption

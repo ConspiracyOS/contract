@@ -13,18 +13,18 @@ func CheckPathExists(path string, fileType types.PathType) Result {
 	info, err := os.Stat(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return Result{false, fmt.Sprintf("path does not exist: %s", path)}
+			return Result{false, fmt.Sprintf("path does not exist: %s", path), ""}
 		}
-		return Result{false, fmt.Sprintf("stat %s: %v", path, err)}
+		return Result{false, fmt.Sprintf("stat %s: %v", path, err), ""}
 	}
 	switch fileType {
 	case types.PathTypeFile:
 		if info.IsDir() {
-			return Result{false, fmt.Sprintf("%s exists but is a directory", path)}
+			return Result{false, fmt.Sprintf("%s exists but is a directory", path), ""}
 		}
 	case types.PathTypeDirectory:
 		if !info.IsDir() {
-			return Result{false, fmt.Sprintf("%s exists but is a file", path)}
+			return Result{false, fmt.Sprintf("%s exists but is a file", path), ""}
 		}
 	}
 	return Result{Pass: true}
@@ -35,10 +35,10 @@ func CheckPathExists(path string, fileType types.PathType) Result {
 func CheckPathNotExists(path string) Result {
 	_, err := os.Stat(path)
 	if err == nil {
-		return Result{false, fmt.Sprintf("path should not exist: %s", path)}
+		return Result{false, fmt.Sprintf("path should not exist: %s", path), ""}
 	}
 	if errors.Is(err, os.ErrNotExist) {
 		return Result{Pass: true}
 	}
-	return Result{false, fmt.Sprintf("stat %s: %v", path, err)}
+	return Result{false, fmt.Sprintf("stat %s: %v", path, err), ""}
 }

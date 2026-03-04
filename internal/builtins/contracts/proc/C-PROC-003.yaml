@@ -1,0 +1,12 @@
+id: C-PROC-003
+description: TODO comments must include an issue reference
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["src/**/*", "lib/**/*", "app/**/*"]
+  exclude: ["**/*.md"]
+checks:
+  - name: no bare TODO without issue ref
+    no_regex_in_file:
+      pattern: 'TODO(?!\(#[0-9]+\))'
+    on_fail: require_exemption

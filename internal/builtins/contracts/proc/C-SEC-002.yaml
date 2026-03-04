@@ -1,0 +1,16 @@
+id: C-SEC-002
+description: Source must pass secrets scan (gitleaks or trufflehog)
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: secrets scan
+    severity: critical
+    category: security
+    what: "Secrets scan found potential credentials in source"
+    verify: "gitleaks detect --no-git --source . --exit-code 1 2>&1 | tail -5"
+    affects: ["./"]
+    command:
+      run: "if command -v gitleaks >/dev/null 2>&1; then gitleaks detect --no-git --source . --exit-code 1 2>&1; elif command -v trufflehog >/dev/null 2>&1; then trufflehog filesystem . --only-verified --fail 2>&1; else echo 'No secrets scanner found. Install: brew install gitleaks'; exit 1; fi"
+      exit_code: 0
+    on_fail: warn

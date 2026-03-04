@@ -8,11 +8,19 @@ import (
 )
 
 const preCommitHook = `#!/bin/sh
-contracts audit --trigger commit
+if ! command -v contracts >/dev/null 2>&1; then
+  echo "contracts not found — skipping checks. Install: go install github.com/ConspiracyOS/contracts/cmd/contracts@latest"
+  exit 0
+fi
+contracts check --tags pre-commit
 `
 
 const prePushHook = `#!/bin/sh
-contracts audit --trigger pr
+if ! command -v contracts >/dev/null 2>&1; then
+  echo "contracts not found — skipping checks. Install: go install github.com/ConspiracyOS/contracts/cmd/contracts@latest"
+  exit 0
+fi
+contracts check --tags pre-push
 `
 
 // InstallHooks writes git hooks to .git/hooks/ — idempotent.

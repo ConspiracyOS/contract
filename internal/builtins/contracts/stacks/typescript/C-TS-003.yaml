@@ -1,0 +1,12 @@
+id: C-TS-003
+description: use client directive requires annotation
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["src/**/*.tsx"]
+  exclude: ["**/*.test.tsx"]
+checks:
+  - name: use client requires annotation
+    no_regex_in_file:
+      pattern: '"use client"(?!.*@pattern:client-component)'
+    on_fail: require_exemption

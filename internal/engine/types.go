@@ -32,17 +32,6 @@ const (
 	TypeHolistic  ContractType = "holistic"
 )
 
-// Trigger determines when the contract is evaluated.
-// "schedule" is used by ConspiracyOS heartbeat; git triggers by host CLI.
-type Trigger string
-
-const (
-	TriggerCommit   Trigger = "commit"
-	TriggerPR       Trigger = "pr"
-	TriggerMerge    Trigger = "merge"
-	TriggerSchedule Trigger = "schedule"
-)
-
 // OnFail action string — evaluator maps to context-appropriate behaviour.
 type OnFail string
 
@@ -54,6 +43,22 @@ const (
 	OnFailHaltAgents       OnFail = "halt_agents" // ConspiracyOS: halt all agents
 	OnFailAlert            OnFail = "alert"        // ConspiracyOS: alert
 )
+
+// DefaultSeverity derives a severity string from an on_fail action.
+func DefaultSeverity(onFail OnFail) string {
+	switch onFail {
+	case OnFailHaltAgents:
+		return "critical"
+	case OnFailFail, OnFailEscalate:
+		return "high"
+	case OnFailWarn, OnFailAlert:
+		return "medium"
+	case OnFailRequireExemption:
+		return "low"
+	default:
+		return "high"
+	}
+}
 
 type Scope struct {
 	Global  bool
@@ -67,6 +72,13 @@ type Check struct {
 	Name   string  `yaml:"name"`
 	OnFail OnFail  `yaml:"on_fail"`
 	SkipIf *SkipIf `yaml:"skip_if"`
+
+	// Brief-mode fields (optional). All omitted for existing contracts.
+	Severity string   `yaml:"severity,omitempty"` // critical|high|medium|low|info
+	Category string   `yaml:"category,omitempty"` // integrity|security|config|performance|network
+	What     string   `yaml:"what,omitempty"`     // factual observation (no interpretation)
+	Verify   string   `yaml:"verify,omitempty"`   // read-only verification command
+	Affects  []string `yaml:"affects,omitempty"`  // paths, services, resources
 
 	// Check modules (exactly one should be set)
 	Command       *CommandCheck      `yaml:"command"`
@@ -87,11 +99,13 @@ type Contract struct {
 	ID          string       `yaml:"id"`
 	Description string       `yaml:"description"`
 	Type        ContractType `yaml:"type"`
-	Trigger     Trigger      `yaml:"trigger"`
+	Tags        []string     `yaml:"-"` // custom unmarshal (scalar or list)
 	Scope       Scope        `yaml:"-"` // custom unmarshal
 	SkipIf      *SkipIf      `yaml:"skip_if"`
 	Checks      []Check      `yaml:"checks"`
 	Builtin     bool         `yaml:"-"` // set by loader, not in YAML
+	System      bool         `yaml:"-"` // set by loader for ~/.config/contracts entries
+	DependsOn   []string     `yaml:"depends_on,omitempty"` // contract IDs whose failures must be addressed first
 }
 
 // CheckStatus is the outcome of a single check evaluation.
@@ -113,6 +127,12 @@ type CheckResult struct {
 	Message             string      `json:"message"`
 	File                string      `json:"file,omitempty"`
 	OnFail              OnFail      `json:"on_fail,omitempty"`
+	Evidence            string      `json:"evidence,omitempty"`  // auto-captured stdout from check run
+	Severity            string      `json:"severity,omitempty"`  // derived or explicit
+	Category            string      `json:"category,omitempty"`
+	What                string      `json:"what,omitempty"`
+	Verify              string      `json:"verify,omitempty"`
+	Affects             []string    `json:"affects,omitempty"`
 }
 
 type AuditResult struct {

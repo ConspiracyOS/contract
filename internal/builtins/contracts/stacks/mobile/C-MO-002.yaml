@@ -1,0 +1,12 @@
+id: C-MO-002
+description: No hardcoded localhost in non-test source
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["src/**/*", "app/**/*", "components/**/*"]
+  exclude: ["**/*.test.*", "**/*.spec.*", "**/__tests__/**"]
+checks:
+  - name: no hardcoded localhost
+    no_regex_in_file:
+      pattern: "localhost"
+    on_fail: require_exemption

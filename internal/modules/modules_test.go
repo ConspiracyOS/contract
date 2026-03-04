@@ -632,3 +632,22 @@ func TestRunScript_Stderr(t *testing.T) {
 		t.Errorf("expected stderr in reason, got: %s", result.Reason)
 	}
 }
+
+func TestRunCommand_CapturesEvidence(t *testing.T) {
+	c := &engine.CommandCheck{Run: "echo 'hello evidence'", ExitCode: 0}
+	result := modules.RunCommand(c, ".")
+	if result.Evidence == "" {
+		t.Fatal("expected evidence to be populated from stdout")
+	}
+	if !strings.Contains(result.Evidence, "hello evidence") {
+		t.Errorf("expected stdout in evidence, got: %q", result.Evidence)
+	}
+}
+
+func TestRunScript_CapturesEvidence(t *testing.T) {
+	c := &engine.ScriptCheck{Inline: "echo 'script evidence'"}
+	result := modules.RunScript(c, ".")
+	if result.Evidence == "" {
+		t.Fatal("expected evidence from script stdout")
+	}
+}

@@ -1,0 +1,17 @@
+id: C-DOC-001
+description: docs/ARCHITECTURE.md must exist
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: ARCHITECTURE.md present
+    severity: low
+    category: config
+    what: "docs/ARCHITECTURE.md does not exist"
+    verify: "ls docs/ARCHITECTURE.md"
+    affects: ["docs/"]
+    path_exists:
+      path: docs/ARCHITECTURE.md
+    on_fail: fail
+    skip_if:
+      path_not_exists: docs

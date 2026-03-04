@@ -1,7 +1,7 @@
 id: C-TEST-001
 description: Test contract
 type: atomic
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: echo check

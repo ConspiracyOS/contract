@@ -1,0 +1,11 @@
+id: C-RS-001
+description: cargo clippy must pass with no warnings
+type: atomic
+tags: [pre-commit]
+scope: global
+checks:
+  - name: cargo clippy clean
+    command:
+      run: "cargo clippy -- -D warnings 2>&1 | tail -5"
+      exit_code: 0
+    on_fail: fail

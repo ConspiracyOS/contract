@@ -1,0 +1,11 @@
+id: C-RB-001
+description: Rubocop linting must pass
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: bundle exec rubocop
+    command:
+      run: "bundle exec rubocop --format progress 2>&1 | tail -3"
+      exit_code: 0
+    on_fail: fail

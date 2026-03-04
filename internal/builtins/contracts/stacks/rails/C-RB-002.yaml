@@ -1,0 +1,13 @@
+id: C-RB-002
+description: Rails test suite must pass
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: bundle exec rails test
+    command:
+      run: "bundle exec rails test 2>&1 | tail -5"
+      exit_code: 0
+    on_fail: fail
+    skip_if:
+      path_not_exists: test

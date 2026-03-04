@@ -1,0 +1,11 @@
+id: C-CT-003
+description: No latest image tags in compose files
+type: atomic
+tags: [pre-commit]
+scope:
+  paths: ["**/docker-compose*.yml", "**/docker-compose*.yaml", "**/compose*.yml", "**/compose*.yaml"]
+checks:
+  - name: no latest tag
+    no_regex_in_file:
+      pattern: ":latest"
+    on_fail: warn

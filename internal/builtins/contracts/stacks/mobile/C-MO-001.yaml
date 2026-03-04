@@ -1,0 +1,13 @@
+id: C-MO-001
+description: expo-doctor must pass
+type: atomic
+tags: [pre-push]
+scope: global
+checks:
+  - name: expo-doctor
+    command:
+      run: "npx expo-doctor 2>&1 | tail -5"
+      exit_code: 0
+    on_fail: warn
+    skip_if:
+      path_not_exists: app.json

@@ -1,0 +1,13 @@
+id: C-JS-001
+description: JavaScript lint should pass when configured
+type: atomic
+tags: [pre-commit]
+scope: global
+checks:
+  - name: npm lint
+    command:
+      run: "npm run lint --if-present 2>&1 | tail -5"
+      exit_code: 0
+    on_fail: warn
+    skip_if:
+      command_not_available: npm

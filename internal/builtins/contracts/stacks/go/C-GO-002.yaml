@@ -1,7 +1,7 @@
 id: C-GO-002
 description: Go code must pass vet
 type: atomic
-trigger: commit
+tags: [pre-commit]
 scope: global
 checks:
   - name: go vet passes

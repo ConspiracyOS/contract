@@ -18,7 +18,7 @@ var statusLabel = map[CheckStatus]string{
 // verbose=true shows per-file results; false collapses to per-contract.
 func FormatText(result AuditResult, verbose bool) string {
 	var b strings.Builder
-	b.WriteString("\n=== contracts audit ===\n\n")
+	b.WriteString("\n=== contracts check ===\n\n")
 
 	// Group by contract: worst status wins
 	seen := map[string]CheckStatus{}

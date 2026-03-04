@@ -19,15 +19,15 @@ func RunScript(c *types.ScriptCheck, cwd string) Result {
 	if c.Inline != "" {
 		tmp, err := os.CreateTemp("", "contracts-script-*.sh")
 		if err != nil {
-			return Result{false, fmt.Sprintf("creating temp script: %v", err)}
+			return Result{false, fmt.Sprintf("creating temp script: %v", err), ""}
 		}
 		defer os.Remove(tmp.Name())
 		if _, err := tmp.WriteString("#!/bin/sh\n" + c.Inline); err != nil {
 			tmp.Close()
-			return Result{false, fmt.Sprintf("writing temp script: %v", err)}
+			return Result{false, fmt.Sprintf("writing temp script: %v", err), ""}
 		}
 		if err := tmp.Close(); err != nil {
-			return Result{false, fmt.Sprintf("closing temp script: %v", err)}
+			return Result{false, fmt.Sprintf("closing temp script: %v", err), ""}
 		}
 		os.Chmod(tmp.Name(), 0755)
 		scriptPath = tmp.Name()
@@ -57,19 +57,20 @@ func RunScript(c *types.ScriptCheck, cwd string) Result {
 
 	select {
 	case err := <-done:
+		stdout := strings.TrimSpace(string(out))
 		if err != nil {
 			if exitErr, ok := err.(*exec.ExitError); ok {
 				msg := strings.TrimSpace(string(exitErr.Stderr))
 				if msg == "" {
 					msg = fmt.Sprintf("exit code %d", exitErr.ExitCode())
 				}
-				return Result{false, msg}
+				return Result{false, msg, stdout}
 			}
-			return Result{false, err.Error()}
+			return Result{false, err.Error(), ""}
 		}
-		return Result{Pass: true, Reason: strings.TrimSpace(string(out))}
+		return Result{Pass: true, Reason: stdout, Evidence: stdout}
 	case <-time.After(timeout):
 		cmd.Process.Kill()
-		return Result{false, fmt.Sprintf("timed out after %s", timeout)}
+		return Result{false, fmt.Sprintf("timed out after %s", timeout), ""}
 	}
 }
