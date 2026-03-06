@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/ConspiracyOS/contracts/internal/types"
 )
@@ -14,9 +15,27 @@ type Result = types.Result
 
 // RunCommand executes a shell command and checks its exit code and optional output.
 func RunCommand(c *types.CommandCheck, cwd string) Result {
+	timeout := 120 * time.Second
+
 	cmd := exec.Command("sh", "-c", c.Run)
 	cmd.Dir = cwd
-	out, err := cmd.Output()
+
+	done := make(chan error, 1)
+	var out []byte
+	go func() {
+		var err error
+		out, err = cmd.Output()
+		done <- err
+	}()
+
+	var err error
+	select {
+	case err = <-done:
+	case <-time.After(timeout):
+		cmd.Process.Kill()
+		return Result{false, fmt.Sprintf("timed out after %s", timeout), ""}
+	}
+
 	stdout := strings.TrimSpace(string(out))
 
 	exitCode := 0

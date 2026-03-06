@@ -3,6 +3,7 @@ package engine
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -41,8 +42,13 @@ func FormatText(result AuditResult, verbose bool) string {
 		}
 	}
 
-	for id, status := range seen {
-		label := statusLabel[status]
+	ids := make([]string, 0, len(seen))
+	for id := range seen {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		label := statusLabel[seen[id]]
 		fmt.Fprintf(&b, "%s  %s  %s\n", id, label, msgs[id])
 	}
 

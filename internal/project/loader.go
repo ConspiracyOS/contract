@@ -2,6 +2,7 @@ package project
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -82,6 +83,7 @@ func LoadDir(dir string) ([]*engine.Contract, error) {
 		}
 		c, parseErr := engine.ParseContractFile(path)
 		if parseErr != nil {
+			fmt.Fprintf(os.Stderr, "warn: skipping %s: %v\n", path, parseErr)
 			return nil // skip invalid contracts (don't abort)
 		}
 		contracts = append(contracts, c)
