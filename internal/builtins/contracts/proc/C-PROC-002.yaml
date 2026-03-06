@@ -9,3 +9,5 @@ checks:
     regex_in_file:
       pattern: "Closes #"
     on_fail: warn
+    skip_if:
+      path_not_exists: .github/PULL_REQUEST_TEMPLATE.md

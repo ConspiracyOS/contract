@@ -12,5 +12,5 @@ checks:
     verify: "grep -n '^\\.env' .gitignore"
     affects: [".gitignore", ".env"]
     regex_in_file:
-      pattern: "^\\.env"
+      pattern: "^[.]env$"
     on_fail: fail
