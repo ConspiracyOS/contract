@@ -12,6 +12,7 @@ type rawContract struct {
 	ID          string       `yaml:"id"`
 	Description string       `yaml:"description"`
 	Type        ContractType `yaml:"type"`
+	Trigger     string       `yaml:"trigger,omitempty"`
 	Tags        yaml.Node    `yaml:"tags"` // scalar or sequence
 	Scope       yaml.Node    `yaml:"scope"`
 	SkipIf      *SkipIf      `yaml:"skip_if"`
@@ -47,6 +48,7 @@ func ParseContract(data []byte) (*Contract, error) {
 		ID:          raw.ID,
 		Description: raw.Description,
 		Type:        raw.Type,
+		Trigger:     raw.Trigger,
 		Tags:        tags,
 		Scope:       scope,
 		SkipIf:      raw.SkipIf,
