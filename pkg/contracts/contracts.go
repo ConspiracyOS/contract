@@ -25,6 +25,7 @@ const (
 	OnFailEscalate         = engine.OnFailEscalate
 	OnFailHaltAgents       = engine.OnFailHaltAgents
 	OnFailAlert            = engine.OnFailAlert
+	OnFailHalt             = engine.OnFailHalt
 )
 
 // LoadDir loads all YAML contracts from a directory.

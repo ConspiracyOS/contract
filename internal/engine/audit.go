@@ -109,6 +109,8 @@ func aggregate(results []CheckResult) AuditResult {
 			r.Exempt++
 		case StatusSkip:
 			r.Skipped++
+		case StatusHalt:
+			r.Halted++
 		}
 	}
 	return r

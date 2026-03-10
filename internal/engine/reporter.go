@@ -13,6 +13,7 @@ var statusLabel = map[CheckStatus]string{
 	StatusWarn:   "WARN  ",
 	StatusExempt: "EXEMPT",
 	StatusSkip:   "SKIP  ",
+	StatusHalt:   "HALT  ",
 }
 
 // FormatText returns a human-readable audit report.
@@ -52,14 +53,18 @@ func FormatText(result AuditResult, verbose bool) string {
 		fmt.Fprintf(&b, "%s  %s  %s\n", id, label, msgs[id])
 	}
 
-	fmt.Fprintf(&b, "\n=== %d passed, %d failed, %d warned, %d exempt, %d skipped ===\n",
+	summary := fmt.Sprintf("%d passed, %d failed, %d warned, %d exempt, %d skipped",
 		result.Passed, result.Failed, result.Warned, result.Exempt, result.Skipped)
+	if result.Halted > 0 {
+		summary += fmt.Sprintf(", %d halted", result.Halted)
+	}
+	fmt.Fprintf(&b, "\n=== %s ===\n", summary)
 	return b.String()
 }
 
 func worse(a, b CheckStatus) bool {
 	rank := map[CheckStatus]int{
-		StatusFail: 4, StatusWarn: 3, StatusExempt: 2, StatusSkip: 1, StatusPass: 0,
+		StatusHalt: 5, StatusFail: 4, StatusWarn: 3, StatusExempt: 2, StatusSkip: 1, StatusPass: 0,
 	}
 	return rank[a] > rank[b]
 }

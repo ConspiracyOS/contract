@@ -58,6 +58,13 @@ func RunCheck(contract *Contract, check *Check, file, projectRoot string) CheckR
 		}
 	}
 
+	// halt: protocol contracts — action must not proceed
+	if onFail == OnFailHalt {
+		base.Status = StatusHalt
+		base.Message = result.Reason
+		return base
+	}
+
 	// warn-level actions: warn, alert
 	if onFail == OnFailWarn || onFail == OnFailAlert {
 		base.Status = StatusWarn

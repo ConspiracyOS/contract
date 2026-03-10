@@ -30,6 +30,7 @@ const (
 	TypeAtomic    ContractType = "atomic"
 	TypeDetective ContractType = "detective"
 	TypeHolistic  ContractType = "holistic"
+	TypeProtocol  ContractType = "protocol"
 )
 
 // OnFail action string — evaluator maps to context-appropriate behaviour.
@@ -42,12 +43,13 @@ const (
 	OnFailEscalate         OnFail = "escalate"    // ConspiracyOS: escalate to sysadmin
 	OnFailHaltAgents       OnFail = "halt_agents" // ConspiracyOS: halt all agents
 	OnFailAlert            OnFail = "alert"        // ConspiracyOS: alert
+	OnFailHalt             OnFail = "halt"         // Protocol: block the action
 )
 
 // DefaultSeverity derives a severity string from an on_fail action.
 func DefaultSeverity(onFail OnFail) string {
 	switch onFail {
-	case OnFailHaltAgents:
+	case OnFailHaltAgents, OnFailHalt:
 		return "critical"
 	case OnFailFail, OnFailEscalate:
 		return "high"
@@ -99,8 +101,9 @@ type Contract struct {
 	ID          string       `yaml:"id"`
 	Description string       `yaml:"description"`
 	Type        ContractType `yaml:"type"`
-	Tags        []string     `yaml:"-"` // custom unmarshal (scalar or list)
-	Scope       Scope        `yaml:"-"` // custom unmarshal
+	Trigger     string       `yaml:"trigger,omitempty"` // protocol contracts: descriptive label for the gated action
+	Tags        []string     `yaml:"-"`                 // custom unmarshal (scalar or list)
+	Scope       Scope        `yaml:"-"`                 // custom unmarshal
 	SkipIf      *SkipIf      `yaml:"skip_if"`
 	Checks      []Check      `yaml:"checks"`
 	Builtin     bool         `yaml:"-"` // set by loader, not in YAML
@@ -117,6 +120,7 @@ const (
 	StatusWarn   CheckStatus = "warn"
 	StatusExempt CheckStatus = "exempt"
 	StatusSkip   CheckStatus = "skip"
+	StatusHalt   CheckStatus = "halt" // protocol contracts: action must not proceed
 )
 
 type CheckResult struct {
@@ -142,4 +146,5 @@ type AuditResult struct {
 	Warned  int           `json:"warned"`
 	Exempt  int           `json:"exempt"`
 	Skipped int           `json:"skipped"`
+	Halted  int           `json:"halted,omitempty"`
 }
